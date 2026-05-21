@@ -5,10 +5,25 @@
    ▲ Next.js 15.5.18
    - Local:        http://localhost:3001
    - Network:      http://localhost:3001
+   - Experiments (use with caution):
+     ⨯ devtoolSegmentExplorer
 
  ✓ Starting...
  ✓ Ready in 2s
  ○ Compiling / ...
- ✓ Compiled / in 4.8s (728 modules)
- GET / 200 in 5351ms
- GET / 200 in 83ms
+ ✓ Compiled / in 5.1s (749 modules)
+ GET / 200 in 5649ms
+ ○ Compiling /play/[category] ...
+ ✓ Compiled /play/[category] in 1561ms (767 modules)
+ GET /play/all 200 in 2712ms
+ GET / 200 in 78ms
+ GET / 200 in 56ms
+ GET / 200 in 58ms
+ GET / 200 in 70ms
+ GET /play/family 200 in 34ms
+ GET / 200 in 21ms
+ GET / 200 in 53ms
+ ✓ Compiled /icon.svg in 397ms (501 modules)
+ GET /icon.svg?467b5986c2eb8ebe 200 in 549ms
+ GET /play/icebreaker 200 in 148ms
+ GET / 200 in 31ms

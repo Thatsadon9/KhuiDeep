@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Yellow Speech Bubble Background (offset slightly for sketchy effect) -->
+  <path d="M 11 26 C 11 15.5, 20.5 8, 32.5 8 C 44.5 8, 53 15.5, 53 26 C 53 36.5, 43.5 42, 32.5 42 C 28.5 42, 25 40.5, 22.5 42 L 14.5 48 L 16 40 C 13 37.5, 11 32, 11 26 Z" fill="#F7E7A7" />
+  
+  <!-- Sketchy Border of the Speech Bubble -->
+  <path d="M 12 27 C 12 16.5, 21 9, 32 9 C 43 9, 52 16.5, 52 27 C 52 37.5, 43 43, 32 43 C 28 43, 24.5 41, 22 42.5 L 15 48 L 16.5 41 C 13.5 38, 12 33, 12 27 Z" stroke="#2F2925" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+  
+  <!-- Pink Heart Background (offset slightly) -->
+  <path d="M 32 33 C 32 33, 24 28.5, 24 22.5 C 24 18, 28.5 15.5, 32 19 C 35.5 15.5, 40 18, 40 22.5 C 40 28.5, 32 33, 32 33 Z" fill="#F3B8C6" />
+  
+  <!-- Sketchy Border of the Heart -->
+  <path d="M 32 32.5 C 32 32.5, 24.5 28, 24.5 22 C 24.5 17.5, 29 15, 32 18.5 C 35 15, 39.5 17.5, 39.5 22 C 39.5 28, 32 32.5, 32 32.5 Z" stroke="#2F2925" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+  
+  <!-- Small Star Sparkle (Top Right) -->
+  <!-- Fill -->
+  <path d="M 48 5 C 48 9, 50 11, 56 13 C 50 13, 48 15, 48 19 C 48 15, 46 13, 40 13 C 46 11, 48 9, 48 5 Z" fill="#B9D9F2" />
+  <!-- Stroke -->
+  <path d="M 48 4 C 48 8.5, 50.5 11, 56 12.5 C 50.5 12.5, 48 15, 48 19.5 C 48 15, 45.5 12.5, 40 12.5 C 45.5 11, 48 8.5, 48 4 Z" stroke="#2F2925" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Small Mint Accent Dot (Bottom Right) -->
+  <circle cx="52" cy="46" r="3" fill="#CCEBD9" stroke="#2F2925" stroke-width="2" />
+</svg>
