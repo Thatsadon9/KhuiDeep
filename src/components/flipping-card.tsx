@@ -1,0 +1,96 @@
+"use client";
+
+import { clsx } from "clsx";
+import { HeartHandshake, MessageCircleHeart } from "lucide-react";
+import type { DeepQuestion, QuestionCategory } from "@/types";
+
+type FlippingCardProps = {
+  question: DeepQuestion | null;
+  category: QuestionCategory | undefined;
+  isFlipped: boolean;
+  onToggle: () => void;
+};
+
+export function FlippingCard({
+  question,
+  category,
+  isFlipped,
+  onToggle,
+}: FlippingCardProps) {
+  const accent = category?.accent ?? "#ffd5bd";
+  const categoryName = category?.name ?? "คำถาม";
+
+  return (
+    <button
+      type="button"
+      className="card-scene block w-full text-left focus:outline-none focus-visible:ring-4 focus-visible:ring-doodle-lemon"
+      onClick={onToggle}
+      aria-pressed={isFlipped}
+      aria-label={isFlipped ? "ปิดการ์ดคำถาม" : "เปิดการ์ดคำถาม"}
+    >
+      <div className={clsx("flip-card", isFlipped && "is-flipped")}>
+        <article
+          className="card-face doodle-grid justify-between bg-paper-50 p-7 sm:p-9"
+          style={{ backgroundColor: accent }}
+        >
+          <div className="relative z-10 flex items-start justify-between gap-4">
+            <div>
+              <p className="font-hand text-xl font-bold text-ink-900">{categoryName}</p>
+              <p className="mt-1 text-sm font-semibold text-ink-700">KhuiDeep คุยดีพ</p>
+            </div>
+            <span className="rounded-full border-2 border-ink-800 bg-paper-50 p-3 shadow-sketch-soft">
+              <MessageCircleHeart className="h-6 w-6" aria-hidden />
+            </span>
+          </div>
+
+          <div className="relative z-10 mx-auto flex h-40 w-40 rotate-[-2deg] items-center justify-center rounded-[45%_55%_48%_52%] border-2 border-dashed border-ink-800 bg-paper-50/78 shadow-tape">
+            <span className="font-hand text-6xl font-bold text-ink-900">?</span>
+          </div>
+
+          <div className="relative z-10 text-center">
+            <p className="font-hand text-2xl font-bold leading-relaxed text-ink-900 sm:text-3xl">
+              แตะการ์ดเพื่อเปิดคำถาม
+            </p>
+            <p className="mx-auto mt-3 max-w-sm text-base leading-7 text-ink-700">
+              เว้นจังหวะให้ใจได้ตอบอย่างค่อยเป็นค่อยไป
+            </p>
+          </div>
+        </article>
+
+        <article className="card-face card-back justify-between bg-paper-50 p-7 sm:p-9">
+          <div className="relative z-10 flex items-center justify-between gap-4">
+            <span
+              className="rounded-full border-2 border-ink-800 px-4 py-1.5 font-hand text-base font-bold shadow-sketch-soft"
+              style={{ backgroundColor: accent }}
+            >
+              {categoryName}
+            </span>
+            <HeartHandshake className="h-7 w-7 text-ink-800" aria-hidden />
+          </div>
+
+          <div className="relative z-10 my-8">
+            <p className="font-hand text-2xl font-bold leading-relaxed text-ink-900 sm:text-3xl md:text-4xl">
+              {question?.question ?? "ยังไม่มีคำถามในหมวดนี้"}
+            </p>
+            {question?.helperText ? (
+              <p className="mt-6 border-l-4 border-ink-800 bg-doodle-lemon/45 px-4 py-3 text-base leading-8 text-ink-800 sm:text-lg">
+                {question.helperText}
+              </p>
+            ) : null}
+          </div>
+
+          <div className="relative z-10 flex flex-wrap gap-2">
+            {question?.tags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full border border-ink-800 bg-white px-3 py-1 text-sm font-semibold text-ink-700"
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+        </article>
+      </div>
+    </button>
+  );
+}

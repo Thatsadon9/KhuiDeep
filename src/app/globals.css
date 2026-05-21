@@ -1,0 +1,183 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --paper: #fffdf7;
+  --ink: #2f2925;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  background: var(--paper);
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at top left, rgba(247, 231, 167, 0.55), transparent 34rem),
+    radial-gradient(circle at 80% 8%, rgba(204, 235, 217, 0.5), transparent 28rem),
+    linear-gradient(90deg, rgba(47, 41, 37, 0.035) 1px, transparent 1px),
+    linear-gradient(rgba(47, 41, 37, 0.035) 1px, transparent 1px),
+    var(--paper);
+  background-size: auto, auto, 32px 32px, 32px 32px, auto;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  color: #211d1a;
+  background: #f7e7a7;
+}
+
+.sketchy-panel {
+  position: relative;
+  border: 2px solid var(--ink);
+  border-radius: 24px 18px 22px 16px;
+  background: rgba(255, 253, 247, 0.88);
+  box-shadow: 5px 7px 0 rgba(47, 41, 37, 0.14);
+}
+
+.sketchy-panel::before {
+  position: absolute;
+  inset: 3px -4px -5px 4px;
+  z-index: -1;
+  border: 1.5px solid rgba(47, 41, 37, 0.62);
+  border-radius: 19px 24px 17px 22px;
+  content: "";
+  transform: rotate(-0.45deg);
+}
+
+.tape::before {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  width: 118px;
+  height: 30px;
+  border: 1.5px dashed rgba(47, 41, 37, 0.52);
+  background: rgba(255, 213, 189, 0.74);
+  box-shadow: 0 5px 12px rgba(47, 41, 37, 0.12);
+  content: "";
+  transform: translateX(-50%) rotate(-2deg);
+}
+
+.card-scene {
+  perspective: 1400px;
+}
+
+.flip-card {
+  position: relative;
+  min-height: 430px;
+  transform-style: preserve-3d;
+  transition: transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.flip-card.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.card-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  min-height: 430px;
+  flex-direction: column;
+  overflow: hidden;
+  border: 2.5px solid var(--ink);
+  border-radius: 31px 25px 34px 23px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-shadow:
+    8px 10px 0 rgba(47, 41, 37, 0.15),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.58);
+}
+
+.card-face::after {
+  position: absolute;
+  inset: 12px;
+  pointer-events: none;
+  border: 1.5px dashed rgba(47, 41, 37, 0.24);
+  border-radius: 23px 18px 25px 17px;
+  content: "";
+}
+
+.card-back {
+  transform: rotateY(180deg);
+}
+
+.rough-underline {
+  background-image: linear-gradient(transparent 68%, rgba(247, 231, 167, 0.95) 68%);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+
+.doodle-grid {
+  background-image:
+    linear-gradient(rgba(47, 41, 37, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(47, 41, 37, 0.05) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+@media (max-width: 640px) {
+  .flip-card,
+  .card-face {
+    min-height: 390px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Card Transition Animations */
+@keyframes slideInFromRight {
+  0% {
+    transform: translateX(120%) rotate(12deg) scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0) rotate(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutToLeft {
+  0% {
+    transform: translateX(var(--exit-start-x, 0px)) rotate(var(--exit-start-rotate, 0deg)) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-150%) rotate(-15deg) scale(0.85);
+    opacity: 0;
+  }
+}
+
+.card-enter {
+  animation: slideInFromRight 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.2) forwards;
+}
+
+.card-exit {
+  animation: slideOutToLeft 0.45s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}

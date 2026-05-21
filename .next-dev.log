@@ -1,0 +1,14 @@
+
+> khui-deep@1.0.0 dev
+> next dev --hostname localhost --port 3001
+
+   ▲ Next.js 15.5.18
+   - Local:        http://localhost:3001
+   - Network:      http://localhost:3001
+
+ ✓ Starting...
+ ✓ Ready in 2s
+ ○ Compiling / ...
+ ✓ Compiled / in 4.8s (728 modules)
+ GET / 200 in 5351ms
+ GET / 200 in 83ms
