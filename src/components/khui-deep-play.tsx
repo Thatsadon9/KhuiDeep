@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { clsx } from "clsx";
-import { motion, useMotionValue, useTransform, useSpring, animate } from "framer-motion";
+import type { RealtimeChannel } from "@supabase/supabase-js";
+import { motion, useMotionValue, useTransform, useSpring, animate, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   BookOpenText,
@@ -17,6 +19,9 @@ import {
 } from "lucide-react";
 import { FlippingCard } from "@/components/flipping-card";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AmbientControl } from "@/components/ambient-control";
+import { useSoundEngine } from "@/components/sound-provider";
+import { getSupabaseClient } from "@/lib/supabase";
 import type { DeepQuestion, QuestionCategory, QuestionDeck } from "@/types";
 
 type KhuiDeepPlayProps = {
@@ -61,7 +66,36 @@ function getNextPlayer(playersList: string[], lastPlayerName?: string | null) {
 }
 
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.12,
+      delayChildren: 0.08,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 55, scale: 0.8, rotate: -2 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    rotate: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 200,
+      damping: 13,
+      mass: 0.8,
+    },
+  },
+};
+
 export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
+  const { playDraw, playFlip, playClick } = useSoundEngine();
+
   // Find current category
   const currentCategory = useMemo(() => {
     if (categorySlug === "all") {
@@ -107,10 +141,54 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
   }, [isFlipped, activeCard?.id, x]);
 
 
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const roomId = searchParams ? searchParams.get("room") : null;
+
   // Multiplayer States
   const [players, setPlayers] = useState<string[]>([]);
   const [newPlayerName, setNewPlayerName] = useState("");
   const [isPlayersLoaded, setIsPlayersLoaded] = useState(false);
+
+  // Online Multiplayer States
+  const [myNickname, setMyNickname] = useState<string>("");
+  const [showNamePrompt, setShowNamePrompt] = useState<boolean>(false);
+  const [isCopied, setIsCopied] = useState(false);
+
+  const channelRef = useRef<RealtimeChannel | null>(null);
+
+  // Refs to avoid infinite loops / unsubscribes in Realtime useEffect
+  const usedIdsRef = useRef(usedIds);
+  const visibleCardsRef = useRef(visibleCards);
+  const roundNoticeRef = useRef(roundNotice);
+  const playersRef = useRef(players);
+  const myNicknameRef = useRef(myNickname);
+  const questionPoolRef = useRef(questionPool);
+
+  useEffect(() => {
+    usedIdsRef.current = usedIds;
+  }, [usedIds]);
+
+  useEffect(() => {
+    visibleCardsRef.current = visibleCards;
+  }, [visibleCards]);
+
+  useEffect(() => {
+    roundNoticeRef.current = roundNotice;
+  }, [roundNotice]);
+
+  useEffect(() => {
+    playersRef.current = players;
+  }, [players]);
+
+  useEffect(() => {
+    myNicknameRef.current = myNickname;
+  }, [myNickname]);
+
+  useEffect(() => {
+    questionPoolRef.current = questionPool;
+  }, [questionPool]);
 
   // Load players on mount
   useEffect(() => {
@@ -128,12 +206,26 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
     setIsPlayersLoaded(true);
   }, []);
 
-  // Save players to localStorage
+  // Save players to localStorage (only in offline mode)
   useEffect(() => {
-    if (isPlayersLoaded) {
+    if (isPlayersLoaded && !roomId) {
       localStorage.setItem("khui-deep-players", JSON.stringify(players));
     }
-  }, [players, isPlayersLoaded]);
+  }, [players, isPlayersLoaded, roomId]);
+
+  // Prompt nickname if room is present in URL
+  useEffect(() => {
+    if (roomId) {
+      const savedNickname = localStorage.getItem("khui-deep-my-nickname");
+      if (savedNickname) {
+        setMyNickname(savedNickname);
+      } else {
+        setShowNamePrompt(true);
+      }
+    } else {
+      setShowNamePrompt(false);
+    }
+  }, [roomId]);
 
   const addPlayer = useCallback(() => {
     const name = newPlayerName.trim();
@@ -156,6 +248,54 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
       addPlayer();
     }
   }, [addPlayer]);
+
+  const createRoom = () => {
+    const randomId = Math.random().toString(36).substring(2, 10);
+    const params = new URLSearchParams(searchParams ? searchParams.toString() : "");
+    params.set("room", randomId);
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  const exitRoom = () => {
+    if (channelRef.current) {
+      channelRef.current.unsubscribe();
+      channelRef.current = null;
+    }
+    const params = new URLSearchParams(searchParams ? searchParams.toString() : "");
+    params.delete("room");
+
+    const stored = localStorage.getItem("khui-deep-players");
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setPlayers(parsed);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      setPlayers([]);
+    }
+
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  const copyInviteLink = () => {
+    const inviteUrl = `${window.location.origin}${pathname}?room=${roomId}`;
+    navigator.clipboard.writeText(inviteUrl).then(() => {
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    });
+  };
+
+  const handleJoinRoomWithName = (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    localStorage.setItem("khui-deep-my-nickname", trimmed);
+    setMyNickname(trimmed);
+    setShowNamePrompt(false);
+  };
 
   // Sync assignedPlayer to current active card when players load/change
   useEffect(() => {
@@ -202,6 +342,48 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
 
   const remainingCount = Math.max(questionPool.length - usedIds.size, 0);
 
+  const performCardTransition = useCallback((
+    nextQuestion: DeepQuestion,
+    nextAssignedPlayer: string | null,
+    customUsedIds: Set<string>,
+    notice: string
+  ) => {
+    setUsedIds(customUsedIds);
+    setRoundNotice(notice);
+    setSwipeState("swiping-away");
+
+    setVisibleCards((prev) => {
+      const updated = prev.map((c) =>
+        c.state === "active" ? { ...c, state: "exiting" as const } : c
+      );
+      return [
+        ...updated,
+        {
+          id: `${nextQuestion.id}-${Date.now()}`,
+          question: nextQuestion,
+          state: "entering" as const,
+          isFlipped: false,
+          assignedPlayer: nextAssignedPlayer,
+        },
+      ];
+    });
+
+    playDraw();
+    animate(x, -200, { duration: 0.4, ease: "easeOut" });
+
+    setTimeout(() => {
+      setVisibleCards((prev) => {
+        const entering = prev.find((c) => c.state === "entering");
+        if (entering) {
+          return [{ ...entering, state: "active" as const }];
+        }
+        return prev.filter((c) => c.state === "active");
+      });
+      setSwipeState("idle");
+      x.set(0);
+    }, 600);
+  }, [x, playDraw]);
+
   const drawQuestion = useCallback(() => {
     if (questionPool.length === 0 || swipeState !== "idle") {
       return;
@@ -225,39 +407,23 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
     }
 
     nextUsedIds.add(nextQuestion.id);
-    setUsedIds(nextUsedIds);
-    setRoundNotice(notice);
+    const nextAssignedPlayer = getNextPlayer(players, activeCard?.assignedPlayer);
 
-    setSwipeState("swiping-away");
-
-    setVisibleCards((prev) => {
-      const updated = prev.map((c) =>
-        c.state === "active" ? { ...c, state: "exiting" as const } : c
-      );
-      return [
-        ...updated,
-        {
-          id: `${nextQuestion.id}-${Date.now()}`,
-          question: nextQuestion,
-          state: "entering" as const,
-          isFlipped: false,
-          assignedPlayer: getNextPlayer(players, activeCard?.assignedPlayer),
+    if (roomId && channelRef.current) {
+      channelRef.current.send({
+        type: "broadcast",
+        event: "draw-card",
+        payload: {
+          questionId: nextQuestion.id,
+          assignedPlayer: nextAssignedPlayer,
+          notice,
+          usedIds: Array.from(nextUsedIds),
         },
-      ];
-    });
-
-    setTimeout(() => {
-      setVisibleCards((prev) => {
-        const entering = prev.find((c) => c.state === "entering");
-        if (entering) {
-          return [{ ...entering, state: "active" as const }];
-        }
-        return prev.filter((c) => c.state === "active");
       });
-      setSwipeState("idle");
-      x.set(0);
-    }, 600);
-  }, [questionPool, usedIds, visibleCards, swipeState, x, players]);
+    }
+
+    performCardTransition(nextQuestion, nextAssignedPlayer, nextUsedIds, notice);
+  }, [questionPool, usedIds, visibleCards, swipeState, players, roomId, performCardTransition]);
 
   const resetRound = useCallback(() => {
     if (questionPool.length === 0 || swipeState !== "idle") return;
@@ -265,49 +431,148 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
     if (!nextQuestion) return;
 
     const activeCard = visibleCards.find((c) => c.state === "active");
+    const nextUsedIds = new Set([nextQuestion.id]);
+    const nextAssignedPlayer = getNextPlayer(players, activeCard?.assignedPlayer);
+    const notice = "เริ่มนับกองคำถามรอบนี้ใหม่แล้ว";
 
-    setUsedIds(new Set([nextQuestion.id]));
-    setRoundNotice("เริ่มนับกองคำถามรอบนี้ใหม่แล้ว");
-    setSwipeState("swiping-away");
-
-    setVisibleCards((prev) => {
-      const updated = prev.map((c) =>
-        c.state === "active" ? { ...c, state: "exiting" as const } : c
-      );
-      return [
-        ...updated,
-        {
-          id: `${nextQuestion.id}-${Date.now()}`,
-          question: nextQuestion,
-          state: "entering" as const,
-          isFlipped: false,
-          assignedPlayer: getNextPlayer(players, activeCard?.assignedPlayer),
+    if (roomId && channelRef.current) {
+      channelRef.current.send({
+        type: "broadcast",
+        event: "reset-deck",
+        payload: {
+          questionId: nextQuestion.id,
+          assignedPlayer: nextAssignedPlayer,
+          usedIds: Array.from(nextUsedIds),
         },
-      ];
-    });
-
-    setTimeout(() => {
-      setVisibleCards((prev) => {
-        const entering = prev.find((c) => c.state === "entering");
-        if (entering) {
-          return [{ ...entering, state: "active" as const }];
-        }
-        return prev.filter((c) => c.state === "active");
       });
-      setSwipeState("idle");
-      x.set(0);
-    }, 600);
-  }, [questionPool, swipeState, x, players, visibleCards]);
+    }
+
+    performCardTransition(nextQuestion, nextAssignedPlayer, nextUsedIds, notice);
+  }, [questionPool, swipeState, players, visibleCards, roomId, performCardTransition]);
 
   const animateNextCard = useCallback(() => {
-    animate(x, -200, { duration: 0.4, ease: "easeOut" });
     drawQuestion();
-  }, [drawQuestion, x]);
+  }, [drawQuestion]);
 
   const animateResetCard = useCallback(() => {
-    animate(x, -200, { duration: 0.4, ease: "easeOut" });
     resetRound();
-  }, [resetRound, x]);
+  }, [resetRound]);
+
+  // Connect to Supabase Realtime channel
+  useEffect(() => {
+    if (!roomId || !myNickname) {
+      return;
+    }
+
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      console.error("Supabase client is not available.");
+      return;
+    }
+
+    const channel = supabase.channel(`room:${roomId}`, {
+      config: {
+        presence: {
+          key: myNickname,
+        },
+      },
+    });
+
+    channelRef.current = channel;
+
+    // Handle Presence state synchronization
+    channel.on("presence", { event: "sync" }, () => {
+      const state = channel.presenceState();
+      const onlineNames = Object.keys(state);
+      setPlayers(onlineNames);
+    });
+
+    // Handle Broadcast events
+    channel.on("broadcast", { event: "draw-card" }, ({ payload }) => {
+      const { questionId, assignedPlayer, notice, usedIds: sentUsedIds } = payload;
+      const question = questionPoolRef.current.find((q) => q.id === questionId);
+      if (question) {
+        performCardTransition(question, assignedPlayer, new Set(sentUsedIds), notice);
+      }
+    });
+
+    channel.on("broadcast", { event: "flip-card" }, ({ payload }) => {
+      const { isFlipped: newFlippedState } = payload;
+      setVisibleCards((prev) =>
+        prev.map((c) => (c.state === "active" ? { ...c, isFlipped: newFlippedState } : c))
+      );
+    });
+
+    channel.on("broadcast", { event: "reset-deck" }, ({ payload }) => {
+      const { questionId, assignedPlayer, usedIds: sentUsedIds } = payload;
+      const question = questionPoolRef.current.find((q) => q.id === questionId);
+      if (question) {
+        performCardTransition(question, assignedPlayer, new Set(sentUsedIds), "เริ่มนับกองคำถามรอบนี้ใหม่แล้ว");
+      }
+    });
+
+    // Syncing state on join
+    channel.on("broadcast", { event: "request-sync" }, () => {
+      const currentState = channel.presenceState();
+      const currentOnlineNames = Object.keys(currentState).sort();
+      if (currentOnlineNames[0] === myNicknameRef.current) {
+        const activeCard = visibleCardsRef.current.find((c) => c.state === "active");
+        channel.send({
+          type: "broadcast",
+          event: "response-sync",
+          payload: {
+            usedIds: Array.from(usedIdsRef.current),
+            activeCard: activeCard
+              ? {
+                  questionId: activeCard.question?.id,
+                  isFlipped: activeCard.isFlipped,
+                  assignedPlayer: activeCard.assignedPlayer,
+                }
+              : null,
+            roundNotice: roundNoticeRef.current,
+          },
+        });
+      }
+    });
+
+    channel.on("broadcast", { event: "response-sync" }, ({ payload }) => {
+      const { usedIds: sentUsedIds, activeCard, roundNotice: sentNotice } = payload;
+      setUsedIds(new Set(sentUsedIds));
+      setRoundNotice(sentNotice);
+      if (activeCard && activeCard.questionId) {
+        const question = questionPoolRef.current.find((q) => q.id === activeCard.questionId);
+        if (question) {
+          setVisibleCards([
+            {
+              id: `${question.id}-${Date.now()}`,
+              question,
+              state: "active",
+              isFlipped: activeCard.isFlipped,
+              assignedPlayer: activeCard.assignedPlayer,
+            },
+          ]);
+        }
+      }
+    });
+
+    // Subscribe to the channel
+    channel.subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        channel.track({ online_at: new Date().toISOString() });
+        // Ask for sync from any existing players
+        channel.send({
+          type: "broadcast",
+          event: "request-sync",
+          payload: {},
+        });
+      }
+    });
+
+    return () => {
+      channel.unsubscribe();
+      channelRef.current = null;
+    };
+  }, [roomId, myNickname, performCardTransition]);
 
   // Framer motion transformed styles for background cards
   const bgCard1Style = {
@@ -360,9 +625,17 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
         className="pointer-events-none absolute right-3 top-3 hidden w-56 rotate-2 opacity-80 sm:block lg:right-12 lg:top-8"
       />
 
-      <div className="relative mx-auto max-w-5xl">
+      <motion.div
+        className="relative mx-auto max-w-5xl"
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+      >
         {/* Navigation Bar */}
-        <nav className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <motion.nav
+          variants={itemVariants}
+          className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+        >
           <div className="flex flex-wrap items-center gap-3">
             <Link
               href="/"
@@ -382,23 +655,26 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
             <Sparkles className="h-5 w-5 animate-pulse text-ink-900" />
             <span>หมวดหมู่: {currentCategory.name}</span>
           </div>
-        </nav>
+        </motion.nav>
 
         {/* Playroom Title & Summary */}
-        <header className="mb-6 rounded-note border-2 border-dashed border-ink-800/40 bg-paper-50/60 p-5">
+        <motion.header
+          variants={itemVariants}
+          className="mb-6 rounded-note border-2 border-dashed border-ink-800/40 bg-paper-50/60 p-5"
+        >
           <h1 className="font-hand text-3xl font-bold text-ink-900 sm:text-4xl">
             กำลังสุ่มการ์ด: {currentCategory.name}
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-ink-700">
             {currentCategory.description}
           </p>
-        </header>
+        </motion.header>
 
         {/* Card Arena & Info Sidebar Grid */}
         <div className="grid items-start gap-8 lg:grid-cols-[1fr_280px]">
           {/* Card Play Zone */}
-          <section className="space-y-6">
-            <div className="relative mx-auto w-full max-w-2xl min-h-[410px] sm:min-h-[450px]">
+          <motion.section variants={itemVariants} className="space-y-6">
+            <div className="relative mx-auto w-full max-w-2xl min-h-[470px] sm:min-h-[520px]">
               {/* Stack Background Cards (Visual Decoration) */}
               <motion.div 
                 style={bgCard1Style} 
@@ -436,10 +712,10 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
                     transition={isEntering ? { duration: 0.5, ease: [0.34, 1.56, 0.64, 1] } : undefined}
                     style={
                       isActive
-                        ? { x, rotate: cardRotate, cursor: "grab" }
+                        ? { x, rotate: cardRotate, cursor: "grab", touchAction: "pan-y" }
                         : isExiting
-                        ? ({ "--exit-start-x": `${x.get()}px`, "--exit-start-rotate": `${x.get() * 0.04}deg`, zIndex: 10 } as React.CSSProperties)
-                        : { zIndex: 20 }
+                        ? ({ "--exit-start-x": `${x.get()}px`, "--exit-start-rotate": `${x.get() * 0.04}deg`, zIndex: 10, touchAction: "none" } as React.CSSProperties)
+                        : { zIndex: 20, touchAction: "none" }
                     }
                   >
                     <FlippingCard
@@ -449,9 +725,20 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
                       assignedPlayer={card.assignedPlayer}
                       onToggle={() => {
                         if (isActive) {
+                          playFlip();
+                          const newFlippedState = !card.isFlipped;
+                          if (roomId && channelRef.current) {
+                            channelRef.current.send({
+                              type: "broadcast",
+                              event: "flip-card",
+                              payload: {
+                                isFlipped: newFlippedState,
+                              },
+                            });
+                          }
                           setVisibleCards((prev) =>
                             prev.map((c) =>
-                              c.id === card.id ? { ...c, isFlipped: !c.isFlipped } : c
+                              c.id === card.id ? { ...c, isFlipped: newFlippedState } : c
                             )
                           );
                         }
@@ -471,7 +758,7 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
             <div className="flex flex-wrap justify-center gap-4">
               <button
                 type="button"
-                onClick={animateNextCard}
+                onClick={() => { playClick(); animateNextCard(); }}
                 disabled={questionPool.length === 0 || swipeState !== "idle"}
                 className={clsx(
                   "btn-doodle group inline-flex items-center gap-2 rounded-note border-2 border-ink-800 px-6 py-3.5 font-hand text-xl font-bold shadow-sketch-soft focus:outline-none focus-visible:ring-4 focus-visible:ring-doodle-lemon",
@@ -489,7 +776,7 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
               </button>
               <button
                 type="button"
-                onClick={animateResetCard}
+                onClick={() => { playClick(); animateResetCard(); }}
                 disabled={questionPool.length === 0 || swipeState !== "idle"}
                 className="btn-doodle group inline-flex items-center gap-2 rounded-note border-2 border-ink-800 bg-white px-5 py-3.5 font-hand text-lg font-bold shadow-sketch-soft focus:outline-none focus-visible:ring-4 focus-visible:ring-doodle-lemon disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ "--btn-hover-rotate": "0.6deg" } as React.CSSProperties}
@@ -498,119 +785,278 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
                 <span>เริ่มนับกองใหม่</span>
               </button>
             </div>
-          </section>
+          </motion.section>
 
           {/* Right Info Panels */}
           <aside className="space-y-5">
             {/* Multiplayer / Turn Mode Panel */}
-            <div className="sketchy-panel bg-white/90 p-5 paper-tilt-left">
-              <div className="flex items-center gap-2 font-hand text-xl font-bold text-ink-900">
-                <Users className="h-5 w-5 text-ink-800" aria-hidden />
-                <span>ผู้ตอบคำถาม (Multiplayer)</span>
-              </div>
-              <p className="mt-2 text-xs text-ink-700 leading-relaxed">
-                ใส่ชื่อเพื่อนหรือแฟนลงไป ระบบจะเวียนคนตอบตามลำดับรายชื่อเมื่อเปิดการ์ดแต่ละใบ!
-              </p>
+            <motion.div variants={itemVariants}>
+              <div className="sketchy-panel bg-white/90 p-5 paper-tilt-left">
+                {roomId ? (
+                  // Online Room Mode
+                  <>
+                    <div className="flex items-center gap-2 font-hand text-xl font-bold text-ink-900">
+                      <Users className="h-5 w-5 text-ink-800" aria-hidden />
+                      <span>ห้องเล่นออนไลน์ (Realtime)</span>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between rounded-note border-2 border-ink-800 bg-paper-50 px-3 py-1 font-hand text-sm font-bold text-ink-900">
+                      <span>รหัสห้อง: {roomId}</span>
+                      <span className="h-2.5 w-2.5 rounded-full bg-green-500 border border-ink-800 animate-ping" />
+                    </div>
 
-              {/* Input for new player */}
-              <div className="mt-4 flex gap-2">
-                <input
-                  type="text"
-                  placeholder="พิมพ์ชื่อ..."
-                  value={newPlayerName}
-                  onChange={(e) => setNewPlayerName(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  className="w-full rounded-note border-2 border-ink-800 bg-paper-50 px-3 py-1.5 font-hand text-base text-ink-900 placeholder-ink-700/50 focus:outline-none focus:ring-2 focus:ring-ink-800/40"
-                  maxLength={15}
-                />
-                <button
-                  type="button"
-                  onClick={addPlayer}
-                  className="btn-doodle flex items-center justify-center rounded-note border-2 border-ink-800 bg-doodle-lemon px-4 font-hand text-lg font-bold shadow-sketch-soft text-ink-900"
-                  style={{ "--btn-hover-rotate": "1.5deg" } as React.CSSProperties}
-                >
-                  เพิ่ม
-                </button>
-              </div>
-
-              {/* Player list */}
-              {players.length > 0 ? (
-                <div className="mt-4 space-y-2 max-h-48 overflow-y-auto pr-1">
-                  {players.map((player) => (
-                    <div
-                      key={player}
-                      className="flex items-center justify-between gap-2 rounded-note border border-ink-800 bg-paper-50/80 px-3 py-1.5 font-hand text-base shadow-sketch-soft text-ink-900"
-                    >
-                      <span className="truncate font-semibold text-ink-900">{player}</span>
+                    <div className="mt-3">
                       <button
                         type="button"
-                        onClick={() => removePlayer(player)}
-                        className="text-red-500 hover:text-red-400 font-bold px-1 transition-colors text-sm hover:scale-110"
-                        title="ลบรายชื่อ"
+                        onClick={copyInviteLink}
+                        className="btn-doodle w-full flex items-center justify-center gap-2 rounded-note border-2 border-ink-800 bg-doodle-lemon px-4 py-2 font-hand text-lg font-bold shadow-sketch-soft text-ink-900"
+                        style={{ "--btn-hover-rotate": "1deg" } as React.CSSProperties}
                       >
-                        ✕
+                        {isCopied ? "คัดลอกลิงก์สำเร็จ! 🎉" : "คัดลอกลิงก์เชิญ 📋"}
                       </button>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="mt-4 text-center font-hand text-sm text-ink-500 italic">
-                  ยังไม่มีผู้เล่นร่วมวง...
-                </p>
-              )}
-            </div>
+
+                    <p className="mt-3 text-xs text-ink-700 leading-relaxed">
+                      ส่งลิงก์เชิญให้เพื่อนกรอกชื่อ เพื่อเข้ามาร่วมวงดูไพ่เปิดไปพร้อมกันแบบเรียลไทม์ได้เลย!
+                    </p>
+
+                    <div className="mt-4 font-hand text-base font-bold text-ink-900">
+                      <span>เพื่อนร่วมวง ({players.length} คน):</span>
+                    </div>
+
+                    {/* Online Players List */}
+                    {players.length > 0 ? (
+                      <div className="mt-2 space-y-2 max-h-48 overflow-y-auto pr-1">
+                        {players.map((player) => (
+                          <div
+                            key={player}
+                            className="flex items-center gap-2 rounded-note border border-ink-800 bg-paper-50/80 px-3 py-1.5 font-hand text-base shadow-sketch-soft text-ink-900"
+                          >
+                            <span className="h-3 w-3 rounded-full bg-green-500 border border-ink-800 shrink-0" />
+                            <span className="truncate font-semibold text-ink-900 flex-1">
+                              {player} {player === myNickname ? "(คุณ)" : ""}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-center font-hand text-sm text-ink-500 italic">
+                        กำลังเชื่อมต่อสมาชิก...
+                      </p>
+                    )}
+
+                    <div className="mt-4 border-t border-dashed border-ink-800/20 pt-4">
+                      <button
+                        type="button"
+                        onClick={exitRoom}
+                        className="btn-doodle w-full flex items-center justify-center gap-2 rounded-note border-2 border-red-800 bg-red-50 hover:bg-red-100 px-4 py-2 font-hand text-lg font-bold shadow-sketch-soft text-red-900"
+                        style={{ "--btn-hover-rotate": "-1deg" } as React.CSSProperties}
+                      >
+                        <span>ออกจากห้องออนไลน์ ✕</span>
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  // Offline Mode
+                  <>
+                    <div className="flex items-center gap-2 font-hand text-xl font-bold text-ink-900">
+                      <Users className="h-5 w-5 text-ink-800" aria-hidden />
+                      <span>ผู้ตอบคำถาม (Multiplayer)</span>
+                    </div>
+                    <p className="mt-2 text-xs text-ink-700 leading-relaxed">
+                      ใส่ชื่อเพื่อนหรือแฟนลงไป ระบบจะเวียนคนตอบตามลำดับรายชื่อเมื่อเปิดการ์ดแต่ละใบ!
+                    </p>
+
+                    {/* Input for new player */}
+                    <div className="mt-4 flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="พิมพ์ชื่อ..."
+                        value={newPlayerName}
+                        onChange={(e) => setNewPlayerName(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        className="w-full rounded-note border-2 border-ink-800 bg-paper-50 px-3 py-1.5 font-hand text-base text-ink-900 placeholder-ink-700/50 focus:outline-none focus:ring-2 focus:ring-ink-800/40"
+                        maxLength={15}
+                      />
+                      <button
+                        type="button"
+                        onClick={addPlayer}
+                        className="btn-doodle flex items-center justify-center rounded-note border-2 border-ink-800 bg-doodle-lemon px-4 font-hand text-lg font-bold shadow-sketch-soft text-ink-900"
+                        style={{ "--btn-hover-rotate": "1.5deg" } as React.CSSProperties}
+                      >
+                        เพิ่ม
+                      </button>
+                    </div>
+
+                    {/* Player list */}
+                    {players.length > 0 ? (
+                      <div className="mt-4 space-y-2 max-h-48 overflow-y-auto pr-1">
+                        {players.map((player) => (
+                          <div
+                            key={player}
+                            className="flex items-center justify-between gap-2 rounded-note border border-ink-800 bg-paper-50/80 px-3 py-1.5 font-hand text-base shadow-sketch-soft text-ink-900"
+                          >
+                            <span className="truncate font-semibold text-ink-900">{player}</span>
+                            <button
+                              type="button"
+                              onClick={() => removePlayer(player)}
+                              className="text-red-500 hover:text-red-400 font-bold px-1 transition-colors text-sm hover:scale-110"
+                              title="ลบรายชื่อ"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-4 text-center font-hand text-sm text-ink-500 italic">
+                        ยังไม่มีผู้เล่นร่วมวง...
+                      </p>
+                    )}
+
+                    <div className="mt-4 border-t border-dashed border-ink-800/20 pt-4">
+                      <button
+                        type="button"
+                        onClick={createRoom}
+                        className="btn-doodle w-full flex items-center justify-center gap-2 rounded-note border-2 border-ink-800 bg-white hover:bg-doodle-peach/20 px-4 py-2 font-hand text-lg font-bold shadow-sketch-soft text-ink-900"
+                        style={{ "--btn-hover-rotate": "-1deg" } as React.CSSProperties}
+                      >
+                        <Sparkles className="h-5 w-5 text-ink-800" />
+                        <span>สร้างห้องเล่นออนไลน์ ✨</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </motion.div>
 
             {/* Round Status Info */}
-            <div className="sketchy-panel bg-white/90 p-5 paper-tilt-right">
-              <div className="flex items-center gap-2 font-hand text-xl font-bold">
-                <RefreshCw className="h-5 w-5 text-ink-800" aria-hidden />
-                <span>สถานะกองคำถาม</span>
-              </div>
-              <p className="mt-3 text-sm leading-relaxed text-ink-700">
-                ใช้ไปแล้ว <strong className="text-base text-ink-900">{usedIds.size}</strong> จากทั้งหมด{" "}
-                <strong className="text-base text-ink-900">{questionPool.length}</strong> ใบ (เหลืออีก {remainingCount} ใบ)
-              </p>
-
-              {/* Graphical Progress Bar */}
-              <div className="mt-4">
-                <div className="flex items-center justify-between text-xs text-ink-500 mb-1">
-                  <span>ความคืบหน้า</span>
-                  <span>
-                    {Math.round((usedIds.size / Math.max(questionPool.length, 1)) * 100)}%
-                  </span>
+            <motion.div variants={itemVariants}>
+              <div className="sketchy-panel bg-white/90 p-5 paper-tilt-right">
+                <div className="flex items-center gap-2 font-hand text-xl font-bold">
+                  <RefreshCw className="h-5 w-5 text-ink-800" aria-hidden />
+                  <span>สถานะกองคำถาม</span>
                 </div>
-                <div className="w-full bg-paper-50 rounded-full border-2 border-ink-800 h-4 overflow-hidden relative shadow-inner">
-                  <div
-                    className="h-full transition-all duration-500 ease-out"
-                    style={{
-                      width: `${(usedIds.size / Math.max(questionPool.length, 1)) * 100}%`,
-                      backgroundColor: currentCategory.accent,
-                    }}
-                  />
-                </div>
-              </div>
-
-              {roundNotice ? (
-                <p className="mt-4 rounded-note border border-ink-800 bg-doodle-lemon/45 px-3 py-2 text-xs font-semibold leading-relaxed">
-                  {roundNotice}
+                <p className="mt-3 text-sm leading-relaxed text-ink-700">
+                  ใช้ไปแล้ว <strong className="text-base text-ink-900">{usedIds.size}</strong> จากทั้งหมด{" "}
+                  <strong className="text-base text-ink-900">{questionPool.length}</strong> ใบ (เหลืออีก {remainingCount} ใบ)
                 </p>
-              ) : null}
-            </div>
+
+                {/* Graphical Progress Bar */}
+                <div className="mt-4">
+                  <div className="flex items-center justify-between text-xs text-ink-500 mb-1">
+                    <span>ความคืบหน้า</span>
+                    <span>
+                      {Math.round((usedIds.size / Math.max(questionPool.length, 1)) * 100)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-paper-50 rounded-full border-2 border-ink-800 h-4 overflow-hidden relative shadow-inner">
+                    <div
+                      className="h-full transition-all duration-500 ease-out"
+                      style={{
+                        width: `${(usedIds.size / Math.max(questionPool.length, 1)) * 100}%`,
+                        backgroundColor: currentCategory.accent,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {roundNotice ? (
+                  <p className="mt-4 rounded-note border border-ink-800 bg-doodle-lemon/45 px-3 py-2 text-xs font-semibold leading-relaxed">
+                    {roundNotice}
+                  </p>
+                ) : null}
+              </div>
+            </motion.div>
 
             {/* Mindful Tips */}
-            <div className="sketchy-panel bg-white/90 p-5 paper-tilt-left">
-              <div className="flex items-center gap-2 font-hand text-xl font-bold text-ink-800">
-                <BookOpenText className="h-5 w-5" aria-hidden />
-                <span>จังหวะของการ์ดนี้</span>
+            <motion.div variants={itemVariants}>
+              <div className="sketchy-panel bg-white/90 p-5 paper-tilt-left">
+                <div className="flex items-center gap-2 font-hand text-xl font-bold text-ink-800">
+                  <BookOpenText className="h-5 w-5" aria-hidden />
+                  <span>จังหวะของการ์ดนี้</span>
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-ink-700">
+                  การตั้งใจฟังมีความหมายเท่ากับคำตอบ ถ้าคำถามหนักหน่วงเกินไป
+                  คุณสามารถเลือกพัก หายใจ แล้วจั่วใบใหม่ได้เสมอโดยไม่มีใครตัดสิน
+                </p>
               </div>
-              <p className="mt-3 text-sm leading-relaxed text-ink-700">
-                การตั้งใจฟังมีความหมายเท่ากับคำตอบ ถ้าคำถามหนักหน่วงเกินไป
-                คุณสามารถเลือกพัก หายใจ แล้วจั่วใบใหม่ได้เสมอโดยไม่มีใครตัดสิน
-              </p>
-            </div>
+            </motion.div>
           </aside>
         </div>
-      </div>
+      </motion.div>
+
+      {/* Nickname Prompt Dialog Modal */}
+      <AnimatePresence>
+        {showNamePrompt && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/70 p-4 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              transition={{ type: "spring", damping: 15 }}
+              className="w-full max-w-md sketchy-panel bg-white p-6 shadow-sketch-strong text-ink-900"
+            >
+              <h3 className="font-hand text-2xl font-bold text-ink-900 text-center flex items-center justify-center gap-2">
+                <Sparkles className="h-6 w-6 text-doodle-peach animate-bounce" />
+                <span>ยินดีต้อนรับร่วมวง! 🎈</span>
+              </h3>
+              
+              <p className="mt-3 font-hand text-base text-ink-700 leading-relaxed text-center">
+                กรุณากรอกชื่อเล่นของคุณเพื่อเข้าร่วมห้องเล่นออนไลน์แบบเรียลไทม์กับเพื่อนๆ
+              </p>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const target = e.currentTarget.elements.namedItem("nickname") as HTMLInputElement;
+                  handleJoinRoomWithName(target.value);
+                }}
+                className="mt-5 space-y-4"
+              >
+                <div>
+                  <label htmlFor="nickname-input" className="sr-only">ชื่อเล่นของคุณ</label>
+                  <input
+                    id="nickname-input"
+                    name="nickname"
+                    type="text"
+                    required
+                    placeholder="กรอกชื่อเล่นสุดคิ้วท์ที่นี่..."
+                    maxLength={15}
+                    className="w-full rounded-note border-2 border-ink-800 bg-paper-50 px-4 py-2 font-hand text-lg text-ink-900 placeholder-ink-700/40 focus:outline-none focus:ring-2 focus:ring-ink-800/40"
+                    autoFocus
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={exitRoom}
+                    className="btn-doodle flex-1 rounded-note border-2 border-ink-800 bg-white py-2 font-hand text-lg font-bold shadow-sketch-soft text-ink-900"
+                    style={{ "--btn-hover-rotate": "-1deg" } as React.CSSProperties}
+                  >
+                    ยกเลิก
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-doodle flex-1 rounded-note border-2 border-ink-800 bg-doodle-lemon py-2 font-hand text-lg font-bold shadow-sketch-soft text-ink-900"
+                    style={{ "--btn-hover-rotate": "1.5deg" } as React.CSSProperties}
+                  >
+                    ร่วมวงเลย! 🚀
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Ambient Sound Control Panel */}
+      <AmbientControl />
     </main>
   );
 }

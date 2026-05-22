@@ -23,10 +23,16 @@ export function FlippingCard({
   const categoryName = category?.name ?? "คำถาม";
 
   return (
-    <button
-      type="button"
-      className="card-scene block w-full text-left focus:outline-none focus-visible:ring-4 focus-visible:ring-doodle-lemon"
-      onClick={onToggle}
+    <div
+      role="button"
+      tabIndex={0}
+      className="card-scene block w-full h-full text-left focus:outline-none focus-visible:ring-4 focus-visible:ring-doodle-lemon cursor-pointer"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onToggle();
+        }
+      }}
       aria-pressed={isFlipped}
       aria-label={isFlipped ? "ปิดการ์ดคำถาม" : "เปิดการ์ดคำถาม"}
       style={{
@@ -34,11 +40,12 @@ export function FlippingCard({
       } as React.CSSProperties}
     >
       <motion.div
-        className="relative w-full h-full min-h-[430px]"
+        className="relative w-full h-full min-h-[470px] sm:min-h-[520px]"
         initial={false}
         animate={{ rotateY: isFlipped ? 180 : 0 }}
         transition={{ type: "spring", stiffness: 200, damping: 20 }}
-        style={{ transformStyle: "preserve-3d" }}
+        style={{ transformStyle: "preserve-3d", touchAction: "pan-y" }}
+        onTap={onToggle}
       >
         <article
           className="card-face doodle-grid justify-between bg-paper-50 p-7 sm:p-9"
@@ -69,7 +76,7 @@ export function FlippingCard({
         </article>
 
         <article className="card-face card-back justify-between bg-paper-50 p-7 sm:p-9 pb-10 sm:pb-12">
-          <div className="relative z-10 flex flex-col gap-1.5">
+          <div className="relative z-10 flex flex-col gap-1.5 shrink-0">
             <div className="flex items-center justify-between gap-4">
               <span
                 className="rounded-full border-2 border-ink-800 px-4 py-1.5 font-hand text-base font-bold shadow-sketch-soft"
@@ -93,7 +100,7 @@ export function FlippingCard({
             )}
           </div>
 
-          <div className="relative z-10 my-6">
+          <div className="relative z-10 my-6 shrink-0">
             <p className="font-hand text-2xl font-bold !leading-[1.6] text-ink-900 sm:text-3xl md:text-4xl">
               {question?.question ?? "ยังไม่มีคำถามในหมวดนี้"}
             </p>
@@ -104,7 +111,7 @@ export function FlippingCard({
             ) : null}
           </div>
 
-          <div className="relative z-10 flex flex-wrap gap-2">
+          <div className="relative z-10 flex flex-wrap gap-2 shrink-0">
             {question?.tags.map((tag) => (
               <span
                 key={tag}
@@ -116,6 +123,6 @@ export function FlippingCard({
           </div>
         </article>
       </motion.div>
-    </button>
+    </div>
   );
 }

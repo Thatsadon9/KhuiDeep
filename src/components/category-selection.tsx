@@ -12,6 +12,7 @@ import {
   History,
   Users,
   Layers,
+  ArrowRight,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { QuestionCategory, QuestionDeck } from "@/types";
@@ -74,17 +75,26 @@ export function CategorySelection({ deck }: CategorySelectionProps) {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: { staggerChildren: 0.12 },
+      transition: {
+        staggerChildren: 0.12,
+        delayChildren: 0.1,
+      },
     },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 40, scale: 0.95 },
+    hidden: { opacity: 0, y: 55, scale: 0.8, rotate: -2 },
     show: {
       opacity: 1,
       y: 0,
       scale: 1,
-      transition: { type: "spring" as const, stiffness: 300, damping: 24 },
+      rotate: 0,
+      transition: {
+        type: "spring" as const,
+        stiffness: 200,
+        damping: 13,
+        mass: 0.8,
+      },
     },
   };
 
@@ -157,7 +167,7 @@ export function CategorySelection({ deck }: CategorySelectionProps) {
                 >
                 {/* Accent Color Band */}
                 <div
-                  className="absolute top-0 inset-x-0 h-3 rounded-t-[22px_16px_0_0]"
+                  className="absolute top-0 inset-x-0 h-3 rounded-tl-[22px] rounded-tr-[16px]"
                   style={{ backgroundColor: category.accent }}
                   aria-hidden
                 />
@@ -189,8 +199,8 @@ export function CategorySelection({ deck }: CategorySelectionProps) {
 
                 {/* Card Bottom / CTA */}
                 <div className="mt-6 border-t border-dashed border-ink-800/20 pt-4 flex items-center justify-between text-ink-800">
-                  <span className="font-hand text-lg font-bold rough-underline">
-                    หยิบการ์ดหมวดนี้ →
+                  <span className="font-hand text-lg font-bold rough-underline flex items-center gap-1">
+                    หยิบการ์ดหมวดนี้ <ArrowRight className="h-5 w-5" />
                   </span>
                   <span
                     className="h-2 w-2 rounded-full transition-transform duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1.1)] group-hover:scale-[1.7]"

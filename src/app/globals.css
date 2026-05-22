@@ -88,6 +88,7 @@ button {
 .card-scene {
   perspective: 1600px;
   cursor: pointer;
+  touch-action: pan-y;
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1.1);
 }
 
@@ -113,7 +114,7 @@ button {
 
 .flip-card {
   position: relative;
-  min-height: 430px;
+  min-height: 520px;
   transform-style: preserve-3d;
   transition: transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1.1);
 }
@@ -126,25 +127,31 @@ button {
   position: absolute;
   inset: 0;
   display: flex;
-  min-height: 430px;
+  min-height: 520px;
   flex-direction: column;
   overflow: hidden;
+  touch-action: pan-y;
   border: 2.5px solid var(--ink);
   border-radius: 31px 25px 34px 23px;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   transform: translateZ(0);
-  -webkit-font-smoothing: subpixel-antialiased;
-  -moz-osx-font-smoothing: auto;
   box-shadow:
     8px 10px 0 rgba(47, 41, 37, 0.15),
     inset 0 0 0 1px rgba(255, 255, 255, 0.58);
   transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1.1), box-shadow 0.4s cubic-bezier(0.25, 0.8, 0.25, 1.1);
 }
 
+/* Hide scrollbar for Chrome, Safari and Opera */
+.card-face::-webkit-scrollbar {
+  display: none;
+}
+
 .card-face * {
-  -webkit-font-smoothing: subpixel-antialiased;
-  -moz-osx-font-smoothing: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .card-face::after {
@@ -157,7 +164,7 @@ button {
 }
 
 .card-back {
-  transform: rotateY(180deg) translateZ(0.1px);
+  transform: rotateY(180deg) translateZ(1px);
 }
 
 .rough-underline {
@@ -182,7 +189,7 @@ button {
 @media (max-width: 640px) {
   .flip-card,
   .card-face {
-    min-height: 390px;
+    min-height: 470px;
   }
 }
 
@@ -616,5 +623,555 @@ button {
   background-color: rgba(255, 255, 255, 0.25);
 }
 
+/* Sketchy Skeleton Loader Animations */
+@keyframes sketch-wobble {
+  0%, 100% {
+    border-radius: 24px 18px 22px 16px;
+    transform: rotate(-0.8deg) scale(1);
+  }
+  33% {
+    border-radius: 20px 22px 18px 20px;
+    transform: rotate(0.6deg) scale(0.995);
+  }
+  66% {
+    border-radius: 22px 16px 24px 18px;
+    transform: rotate(-0.3deg) scale(1.005);
+  }
+}
 
+.animate-sketch-wobble {
+  animation: sketch-wobble 3s ease-in-out infinite;
+}
+
+/* Wiggle the pencil loader */
+@keyframes pencil-wiggle {
+  0%, 100% {
+    transform: rotate(-6deg) translateY(0px) translateX(0px);
+  }
+  25% {
+    transform: rotate(8deg) translateY(-2px) translateX(1px);
+  }
+  50% {
+    transform: rotate(-8deg) translateY(1px) translateX(-2px);
+  }
+  75% {
+    transform: rotate(6deg) translateY(-1px) translateX(2px);
+  }
+}
+
+.animate-pencil-wiggle {
+  animation: pencil-wiggle 1.8s ease-in-out infinite;
+}
+
+/* Skeleton Loading helper backgrounds */
+.skeleton-bar {
+  background-color: rgba(47, 41, 37, 0.08);
+  border-radius: 8px 6px 7px 5px;
+  position: relative;
+  overflow: hidden;
+}
+
+.late-night .skeleton-bar {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ==============================================
+   🎶 Ambient Control Panel Styles
+   ============================================== */
+
+.ambient-control-wrapper {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .ambient-control-wrapper {
+    bottom: 16px;
+    right: 16px;
+  }
+}
+
+/* Floating Action Button */
+.ambient-fab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border: 2.5px solid var(--ink);
+  border-radius: 50% 45% 48% 52%;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 4px 5px 0 rgba(47, 41, 37, 0.15);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ambient-fab:hover {
+  box-shadow: 6px 8px 0 rgba(47, 41, 37, 0.18);
+}
+
+.ambient-fab--playing {
+  background: #ffd5bd;
+}
+
+.ambient-fab--open {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* Pulsing dot when music is playing */
+.ambient-fab-pulse {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #4ade80;
+  border: 2px solid var(--paper);
+  animation: ambient-pulse 2s ease-in-out infinite;
+}
+
+@keyframes ambient-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.25); opacity: 0.7; }
+}
+
+/* Panel */
+.ambient-panel {
+  width: 280px;
+  border: 2.5px solid var(--ink);
+  border-radius: 20px 14px 18px 16px;
+  background: var(--paper);
+  box-shadow: 6px 8px 0 rgba(47, 41, 37, 0.14);
+  overflow: hidden;
+}
+
+.ambient-panel::before {
+  position: absolute;
+  inset: 3px -3px -4px 3px;
+  z-index: -1;
+  border: 1.5px solid rgba(47, 41, 37, 0.5);
+  border-radius: 17px 20px 15px 19px;
+  content: "";
+  transform: rotate(-0.35deg);
+}
+
+.ambient-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1.5px dashed rgba(47, 41, 37, 0.18);
+}
+
+/* Section containers */
+.ambient-section {
+  padding: 12px 16px;
+}
+
+.ambient-section + .ambient-section {
+  border-top: 1.5px dashed rgba(47, 41, 37, 0.12);
+}
+
+.ambient-section-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--ink-900);
+}
+
+/* Toggle Switch */
+.ambient-toggle {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: rgba(47, 41, 37, 0.1);
+  cursor: pointer;
+  transition: background-color 0.25s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ambient-toggle--on {
+  background: #4ade80;
+}
+
+.ambient-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ink);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ambient-toggle--on .ambient-toggle-knob {
+  transform: translateX(18px);
+  background: white;
+}
+
+/* Track Display */
+.ambient-track-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 6px 4px;
+  border: 1.5px solid rgba(47, 41, 37, 0.15);
+  border-radius: 10px 8px 12px 7px;
+  background: rgba(47, 41, 37, 0.03);
+}
+
+.ambient-track-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid var(--ink);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ambient-track-btn:hover {
+  background: rgba(47, 41, 37, 0.08);
+  transform: scale(1.08);
+}
+
+.ambient-track-btn:active {
+  transform: scale(0.92);
+}
+
+.ambient-track-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ambient-track-emoji {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.ambient-track-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-700);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Play/Pause Button */
+.ambient-play-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 34px;
+  margin-top: 10px;
+  border: 2px solid var(--ink);
+  border-radius: 10px 7px 9px 8px;
+  background: #ffd5bd;
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 700;
+  transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 3px 4px 0 rgba(47, 41, 37, 0.12);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ambient-play-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 4px 6px 0 rgba(47, 41, 37, 0.15);
+}
+
+.ambient-play-btn:active {
+  transform: translateY(1px);
+  box-shadow: 1px 2px 0 rgba(47, 41, 37, 0.15);
+}
+
+.ambient-play-btn--playing {
+  background: #bbf7d0;
+}
+
+/* Volume Slider */
+.ambient-volume {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  color: var(--ink);
+}
+
+.ambient-volume-slider {
+  flex: 1;
+  height: 6px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(47, 41, 37, 0.12);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.ambient-volume-slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--ink);
+  border: 2px solid var(--paper);
+  box-shadow: 0 1px 3px rgba(47, 41, 37, 0.25);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.ambient-volume-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.ambient-volume-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--ink);
+  border: 2px solid var(--paper);
+  box-shadow: 0 1px 3px rgba(47, 41, 37, 0.25);
+  cursor: pointer;
+}
+
+/* Track Quick Select Chips */
+.ambient-track-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.ambient-track-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid rgba(47, 41, 37, 0.2);
+  border-radius: 8px 6px 9px 7px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ambient-track-chip:hover {
+  border-color: var(--ink);
+  background: rgba(47, 41, 37, 0.05);
+  transform: translateY(-2px) rotate(-2deg);
+}
+
+.ambient-track-chip--active {
+  border-color: var(--ink);
+  border-width: 2px;
+  background: #ffd5bd;
+  box-shadow: 2px 3px 0 rgba(47, 41, 37, 0.12);
+}
+
+/* Hint text */
+.ambient-hint {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: var(--ink-700);
+  opacity: 0.7;
+}
+
+/* Footer */
+.ambient-footer {
+  padding: 8px 16px 10px;
+  border-top: 1.5px dashed rgba(47, 41, 37, 0.12);
+  font-size: 0.65rem;
+  color: var(--ink-700);
+  opacity: 0.5;
+  text-align: center;
+}
+
+/* ==================================================
+   Late-Night Mode — Ambient Control Panel Overrides
+   ================================================== */
+
+.late-night .ambient-fab {
+  background: #1e1e22;
+  border-color: var(--category-glow, var(--ink));
+  color: var(--ink);
+  box-shadow:
+    4px 5px 0 rgba(0, 0, 0, 0.4),
+    0 0 8px var(--category-glow-soft, rgba(255, 255, 255, 0.08));
+}
+
+.late-night .ambient-fab--playing {
+  background: #222226;
+  box-shadow:
+    4px 5px 0 rgba(0, 0, 0, 0.4),
+    0 0 12px var(--category-glow-soft, rgba(74, 222, 128, 0.3));
+}
+
+.late-night .ambient-fab--open {
+  background: var(--ink);
+  color: #121214;
+}
+
+.late-night .ambient-fab-pulse {
+  border-color: #1e1e22;
+  box-shadow: 0 0 6px rgba(74, 222, 128, 0.5);
+}
+
+.late-night .ambient-panel {
+  background: #16161a;
+  border-color: var(--category-glow, rgba(255, 255, 255, 0.2));
+  box-shadow:
+    6px 8px 0 rgba(0, 0, 0, 0.5),
+    0 0 15px var(--category-glow-soft, rgba(255, 255, 255, 0.06));
+}
+
+.late-night .ambient-panel::before {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.late-night .ambient-panel-header {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.late-night .ambient-section + .ambient-section {
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+.late-night .ambient-toggle {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.late-night .ambient-toggle--on {
+  background: rgba(74, 222, 128, 0.3);
+  border-color: #4ade80;
+}
+
+.late-night .ambient-toggle-knob {
+  background: var(--ink);
+}
+
+.late-night .ambient-toggle--on .ambient-toggle-knob {
+  background: #4ade80;
+}
+
+.late-night .ambient-track-display {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.late-night .ambient-track-btn {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--ink);
+}
+
+.late-night .ambient-track-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.late-night .ambient-play-btn {
+  background: #222226;
+  border-color: var(--category-glow, rgba(255, 255, 255, 0.2));
+  color: var(--ink);
+  box-shadow:
+    3px 4px 0 rgba(0, 0, 0, 0.4),
+    0 0 8px var(--category-glow-soft, rgba(255, 255, 255, 0.06));
+}
+
+.late-night .ambient-play-btn:hover {
+  box-shadow:
+    4px 6px 0 rgba(0, 0, 0, 0.4),
+    0 0 12px var(--category-glow-soft, rgba(255, 255, 255, 0.1));
+}
+
+.late-night .ambient-play-btn--playing {
+  background: rgba(74, 222, 128, 0.15);
+  border-color: #4ade80;
+}
+
+.late-night .ambient-volume-slider {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.late-night .ambient-volume-slider::-webkit-slider-thumb {
+  background: var(--ink);
+  border-color: #222226;
+}
+
+.late-night .ambient-volume-slider::-moz-range-thumb {
+  background: var(--ink);
+  border-color: #222226;
+}
+
+.late-night .ambient-track-chip {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.late-night .ambient-track-chip:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.late-night .ambient-track-chip--active {
+  border-color: var(--category-glow, #4ade80);
+  background: rgba(74, 222, 128, 0.1);
+  box-shadow: 0 0 8px var(--category-glow-soft, rgba(74, 222, 128, 0.15));
+}
+
+.late-night .ambient-footer {
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+@layer base {
+  html, body {
+    @apply antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+@layer utilities {
+  /* นำคลาสนี้ไปใส่ใน <div> ของหน้าการ์ด (Card Face) หรือคอนเทนเนอร์ข้อความบนการ์ด */
+  .fix-text-blur {
+    transform: translateZ(0px);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-font-smoothing: antialiased;
+    will-change: transform;
+  }
+}
 
