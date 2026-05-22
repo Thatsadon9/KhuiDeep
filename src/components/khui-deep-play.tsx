@@ -157,6 +157,7 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
       setSwipeState("idle");
       swipeOffsetRef.current = 0;
       setSwipeOffset(0);
+      hasMoved.current = false;
     }, 600);
   }, [questionPool, usedIds, visibleCards, swipeState]);
 
@@ -195,6 +196,7 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
       setSwipeState("idle");
       swipeOffsetRef.current = 0;
       setSwipeOffset(0);
+      hasMoved.current = false;
     }, 600);
   }, [questionPool, swipeState]);
 
@@ -221,8 +223,10 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
   const handleDragEnd = useCallback(() => {
     if (dragStartX.current === null) return;
     dragStartX.current = null;
+    const moved = hasMoved.current;
+    hasMoved.current = false;
 
-    if (hasMoved.current && swipeOffsetRef.current < -120) {
+    if (moved && swipeOffsetRef.current < -120) {
       drawQuestion({ fromSwipe: true });
     } else {
       setSwipeState("idle");
