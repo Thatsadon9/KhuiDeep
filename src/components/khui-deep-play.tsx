@@ -66,33 +66,6 @@ function getNextPlayer(playersList: string[], lastPlayerName?: string | null) {
 }
 
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.12,
-      delayChildren: 0.08,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 55, scale: 0.8, rotate: -2 },
-  show: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    rotate: 0,
-    transition: {
-      type: "spring" as const,
-      stiffness: 200,
-      damping: 13,
-      mass: 0.8,
-    },
-  },
-};
-
 export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
   const { playDraw, playFlip, playClick } = useSoundEngine();
 
@@ -625,17 +598,9 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
         className="pointer-events-none absolute right-3 top-3 hidden w-56 rotate-2 opacity-80 sm:block lg:right-12 lg:top-8"
       />
 
-      <motion.div
-        className="relative mx-auto max-w-5xl"
-        variants={containerVariants}
-        initial="hidden"
-        animate="show"
-      >
+      <div className="relative mx-auto max-w-5xl">
         {/* Navigation Bar */}
-        <motion.nav
-          variants={itemVariants}
-          className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-        >
+        <nav className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-3">
             <Link
               href="/"
@@ -655,25 +620,22 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
             <Sparkles className="h-5 w-5 animate-pulse text-ink-900" />
             <span>หมวดหมู่: {currentCategory.name}</span>
           </div>
-        </motion.nav>
+        </nav>
 
         {/* Playroom Title & Summary */}
-        <motion.header
-          variants={itemVariants}
-          className="mb-6 rounded-note border-2 border-dashed border-ink-800/40 bg-paper-50/60 p-5"
-        >
+        <header className="mb-6 rounded-note border-2 border-dashed border-ink-800/40 bg-paper-50/60 p-5">
           <h1 className="font-hand text-3xl font-bold text-ink-900 sm:text-4xl">
             กำลังสุ่มการ์ด: {currentCategory.name}
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-ink-700">
             {currentCategory.description}
           </p>
-        </motion.header>
+        </header>
 
         {/* Card Arena & Info Sidebar Grid */}
         <div className="grid items-start gap-8 lg:grid-cols-[1fr_280px]">
           {/* Card Play Zone */}
-          <motion.section variants={itemVariants} className="space-y-6">
+          <section className="space-y-6">
             <div className="relative mx-auto w-full max-w-2xl min-h-[470px] sm:min-h-[520px]">
               {/* Stack Background Cards (Visual Decoration) */}
               <motion.div 
@@ -785,12 +747,12 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
                 <span>เริ่มนับกองใหม่</span>
               </button>
             </div>
-          </motion.section>
+          </section>
 
           {/* Right Info Panels */}
           <aside className="space-y-5">
             {/* Multiplayer / Turn Mode Panel */}
-            <motion.div variants={itemVariants}>
+            <div>
               <div className="sketchy-panel bg-white/90 p-5 paper-tilt-left">
                 {roomId ? (
                   // Online Room Mode
@@ -927,10 +889,10 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
                   </>
                 )}
               </div>
-            </motion.div>
+            </div>
 
             {/* Round Status Info */}
-            <motion.div variants={itemVariants}>
+            <div>
               <div className="sketchy-panel bg-white/90 p-5 paper-tilt-right">
                 <div className="flex items-center gap-2 font-hand text-xl font-bold">
                   <RefreshCw className="h-5 w-5 text-ink-800" aria-hidden />
@@ -966,10 +928,10 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
                   </p>
                 ) : null}
               </div>
-            </motion.div>
+            </div>
 
             {/* Mindful Tips */}
-            <motion.div variants={itemVariants}>
+            <div>
               <div className="sketchy-panel bg-white/90 p-5 paper-tilt-left">
                 <div className="flex items-center gap-2 font-hand text-xl font-bold text-ink-800">
                   <BookOpenText className="h-5 w-5" aria-hidden />
@@ -980,10 +942,10 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
                   คุณสามารถเลือกพัก หายใจ แล้วจั่วใบใหม่ได้เสมอโดยไม่มีใครตัดสิน
                 </p>
               </div>
-            </motion.div>
+            </div>
           </aside>
         </div>
-      </motion.div>
+      </div>
 
       {/* Nickname Prompt Dialog Modal */}
       <AnimatePresence>
