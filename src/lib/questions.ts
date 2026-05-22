@@ -44,7 +44,7 @@ export async function getQuestionDeck(): Promise<QuestionDeck> {
 
   const categoryById = new Map(categories.map((category) => [category.id, category]));
 
-  const questions: DeepQuestion[] = (questionsResult.data ?? [])
+  const fetchedQuestions: DeepQuestion[] = (questionsResult.data ?? [])
     .map((question) => {
       const category = categoryById.get(question.category_id);
 
@@ -60,11 +60,19 @@ export async function getQuestionDeck(): Promise<QuestionDeck> {
         helperText: question.helper_text ?? "",
         level: question.level,
         tags: question.tags ?? [],
+        audience: question.audience ?? [],
+        sensitivity: question.sensitivity ?? [],
+        requiresConsent: question.requires_consent ?? false,
+        defaultPool: question.default_pool ?? true,
+        contentNote: question.content_note ?? "",
+        aftercareLevel: question.aftercare_level ?? 0,
       };
     })
     .filter((question): question is DeepQuestion => Boolean(question));
 
-  if (categories.length === 0 || questions.length === 0) {
+  const questions = fetchedQuestions.filter((question) => question.defaultPool);
+
+  if (categories.length === 0 || fetchedQuestions.length === 0) {
     return fallbackDeck;
   }
 

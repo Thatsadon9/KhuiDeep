@@ -47,6 +47,12 @@ export type Database = {
           helper_text: string | null;
           level: number;
           tags: string[] | null;
+          audience: string[];
+          sensitivity: string[];
+          requires_consent: boolean;
+          default_pool: boolean;
+          content_note: string | null;
+          aftercare_level: number;
           is_active: boolean;
           created_at: string;
           updated_at: string;
@@ -58,6 +64,12 @@ export type Database = {
           helper_text?: string | null;
           level?: number;
           tags?: string[] | null;
+          audience?: string[];
+          sensitivity?: string[];
+          requires_consent?: boolean;
+          default_pool?: boolean;
+          content_note?: string | null;
+          aftercare_level?: number;
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -69,6 +81,12 @@ export type Database = {
           helper_text?: string | null;
           level?: number;
           tags?: string[] | null;
+          audience?: string[];
+          sensitivity?: string[];
+          requires_consent?: boolean;
+          default_pool?: boolean;
+          content_note?: string | null;
+          aftercare_level?: number;
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;

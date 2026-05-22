@@ -15,6 +15,12 @@ export type DeepQuestion = {
   helperText: string;
   level: number;
   tags: string[];
+  audience: string[];
+  sensitivity: string[];
+  requiresConsent: boolean;
+  defaultPool: boolean;
+  contentNote: string;
+  aftercareLevel: number;
 };
 
 export type QuestionDeck = {

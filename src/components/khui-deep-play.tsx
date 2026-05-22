@@ -65,9 +65,58 @@ function getNextPlayer(playersList: string[], lastPlayerName?: string | null) {
   return playersList[(lastIndex + 1) % playersList.length];
 }
 
+const validAudienceFilters = ["self", "friends", "talking_stage", "couple", "family"] as const;
+
+const depthLabels: Record<number, string> = {
+  1: "เบา ๆ",
+  2: "กำลังดี",
+  3: "ลึกขึ้น",
+  4: "ลึกมาก",
+  5: "ลึกสุดใจ",
+};
+
+const audienceLabels: Record<(typeof validAudienceFilters)[number], string> = {
+  self: "เล่นคนเดียว",
+  friends: "เพื่อน",
+  talking_stage: "คนคุย / กำลังจีบ",
+  couple: "แฟน / คู่รัก",
+  family: "ครอบครัว",
+};
+
+function parseDepthFilter(value: string | null) {
+  const numericValue = Number(value);
+
+  if (!Number.isFinite(numericValue)) {
+    return null;
+  }
+
+  const roundedValue = Math.round(numericValue);
+  if (roundedValue < 1 || roundedValue > 5) {
+    return null;
+  }
+
+  return roundedValue;
+}
+
 
 export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
   const { playDraw, playFlip, playClick } = useSoundEngine();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const roomId = searchParams ? searchParams.get("room") : null;
+
+  const selectedDepth = useMemo(
+    () => parseDepthFilter(searchParams ? searchParams.get("depth") : null),
+    [searchParams],
+  );
+
+  const selectedAudience = useMemo(() => {
+    const value = searchParams ? searchParams.get("audience") : null;
+    return validAudienceFilters.includes(value as (typeof validAudienceFilters)[number])
+      ? (value as (typeof validAudienceFilters)[number])
+      : null;
+  }, [searchParams]);
 
   // Find current category
   const currentCategory = useMemo(() => {
@@ -77,13 +126,25 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
     return deck.categories.find((cat) => cat.slug === categorySlug) ?? allCategory;
   }, [deck.categories, categorySlug]);
 
-  // Filter questions for the selected category
-  const questionPool = useMemo(() => {
+  const baseQuestionPool = useMemo(() => {
     if (categorySlug === "all") {
       return deck.questions;
     }
     return deck.questions.filter((question) => question.categorySlug === categorySlug);
   }, [deck.questions, categorySlug]);
+
+  // Filter questions for the selected category and setup choices from the landing modal.
+  const questionPool = useMemo(() => {
+    return baseQuestionPool.filter((question) => {
+      const matchesDepth = selectedDepth ? question.level <= selectedDepth : true;
+      const matchesAudience = selectedAudience ? question.audience.includes(selectedAudience) : true;
+
+      return matchesDepth && matchesAudience;
+    });
+  }, [baseQuestionPool, selectedAudience, selectedDepth]);
+
+  const selectedDepthLabel = selectedDepth ? depthLabels[selectedDepth] ?? `ระดับ ${selectedDepth}` : null;
+  const selectedAudienceLabel = selectedAudience ? audienceLabels[selectedAudience] : null;
 
   type CardItem = {
     id: string;
@@ -113,11 +174,6 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
     animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
   }, [isFlipped, activeCard?.id, x]);
 
-
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
-  const roomId = searchParams ? searchParams.get("room") : null;
 
   // Multiplayer States
   const [players, setPlayers] = useState<string[]>([]);
@@ -255,7 +311,12 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
   };
 
   const copyInviteLink = () => {
-    const inviteUrl = `${window.location.origin}${pathname}?room=${roomId}`;
+    const params = new URLSearchParams(searchParams ? searchParams.toString() : "");
+    if (roomId) {
+      params.set("room", roomId);
+    }
+    const query = params.toString();
+    const inviteUrl = `${window.location.origin}${pathname}${query ? `?${query}` : ""}`;
     navigator.clipboard.writeText(inviteUrl).then(() => {
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
@@ -630,6 +691,20 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
           <p className="mt-2 text-sm leading-relaxed text-ink-700">
             {currentCategory.description}
           </p>
+          {(selectedDepthLabel || selectedAudienceLabel) && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {selectedDepthLabel && (
+                <span className="rounded-full border-2 border-ink-800 bg-white px-3 py-1 font-hand text-sm font-bold shadow-sketch-soft">
+                  ความลึก: {selectedDepthLabel}
+                </span>
+              )}
+              {selectedAudienceLabel && (
+                <span className="rounded-full border-2 border-ink-800 bg-doodle-mint px-3 py-1 font-hand text-sm font-bold shadow-sketch-soft">
+                  เล่นกับ: {selectedAudienceLabel}
+                </span>
+              )}
+            </div>
+          )}
         </header>
 
         {/* Card Arena & Info Sidebar Grid */}
@@ -646,6 +721,28 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
                 style={bgCard2Style} 
                 className="absolute inset-0 border-2 border-ink-800 rounded-[31px_25px_34px_23px] bg-paper-50/40 shadow-sketch-soft pointer-events-none z-0" 
               />
+
+              {questionPool.length === 0 && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[31px_25px_34px_23px] border-2 border-dashed border-ink-800 bg-paper-50/90 p-7 text-center shadow-sketch-soft">
+                  <div className="max-w-md">
+                    <Sparkles className="mx-auto h-9 w-9 text-ink-800" aria-hidden />
+                    <h2 className="mt-4 font-hand text-3xl font-bold text-ink-900">
+                      ยังไม่มีคำถามที่ตรงกับตัวเลือกนี้
+                    </h2>
+                    <p className="mt-3 text-sm leading-7 text-ink-700">
+                      ลองกลับไปเลือกความลึกหรือคนเล่นใหม่ หรือเพิ่ม audience ให้คำถามในหน้า admin
+                    </p>
+                    <Link
+                      href="/"
+                      className="btn-doodle mt-5 inline-flex items-center gap-2 rounded-note border-2 border-ink-800 bg-doodle-lemon px-4 py-2 font-hand text-lg font-bold shadow-sketch-soft"
+                      style={{ "--btn-hover-rotate": "-0.8deg" } as React.CSSProperties}
+                    >
+                      <ArrowLeft className="h-5 w-5" aria-hidden />
+                      <span>กลับไปเลือกใหม่</span>
+                    </Link>
+                  </div>
+                </div>
+              )}
 
               {/* Render Visible Cards */}
               {visibleCards.map((card) => {
@@ -711,10 +808,12 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
               })}
             </div>
 
-            <p className="text-center font-hand text-base text-ink-600 animate-pulse mt-2 flex items-center justify-center gap-1.5">
-              <Lightbulb className="h-5 w-5 text-ink-600 shrink-0" aria-hidden />
-              <span>ปัดการ์ดไปทางซ้ายเพื่อเปลี่ยนใบใหม่ได้นะ!</span>
-            </p>
+            {questionPool.length > 0 && (
+              <p className="text-center font-hand text-base text-ink-600 animate-pulse mt-2 flex items-center justify-center gap-1.5">
+                <Lightbulb className="h-5 w-5 text-ink-600 shrink-0" aria-hidden />
+                <span>ปัดการ์ดไปทางซ้ายเพื่อเปลี่ยนใบใหม่ได้นะ!</span>
+              </p>
+            )}
 
             {/* Main Action Controllers */}
             <div className="flex flex-wrap justify-center gap-4">

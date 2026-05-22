@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Sparkles,
   MessageCircle,
@@ -13,6 +13,12 @@ import {
   Users,
   Layers,
   ArrowRight,
+  ChevronLeft,
+  Gauge,
+  Home,
+  MessagesSquare,
+  UserRound,
+  X,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { QuestionCategory, QuestionDeck } from "@/types";
@@ -54,7 +60,67 @@ const tilts = [
   "rotate-[-2deg] hover:rotate-[1.5deg]",
 ];
 
+const depthOptions = [
+  {
+    value: 1,
+    label: "เบา ๆ",
+    caption: "อุ่นเครื่อง คุยง่าย",
+    accent: "#ccebd9",
+  },
+  {
+    value: 2,
+    label: "กำลังดี",
+    caption: "เริ่มเปิดใจนิด ๆ",
+    accent: "#f7e7a7",
+  },
+  {
+    value: 3,
+    label: "ลึกขึ้น",
+    caption: "แตะเรื่องข้างในมากขึ้น",
+    accent: "#b9d9f2",
+  },
+  {
+    value: 5,
+    label: "ลึกสุดใจ",
+    caption: "เปิดได้ทุกระดับ",
+    accent: "#f3b8c6",
+  },
+];
+
+const audienceOptions = [
+  {
+    value: "self",
+    label: "เล่นคนเดียว",
+    icon: UserRound,
+  },
+  {
+    value: "friends",
+    label: "เพื่อน",
+    icon: Users,
+  },
+  {
+    value: "talking_stage",
+    label: "คนคุย / กำลังจีบ",
+    icon: MessagesSquare,
+  },
+  {
+    value: "couple",
+    label: "แฟน / คู่รัก",
+    icon: Heart,
+  },
+  {
+    value: "family",
+    label: "ครอบครัว",
+    icon: Home,
+  },
+];
+
 export function CategorySelection({ deck }: CategorySelectionProps) {
+  const router = useRouter();
+  const [setupCategory, setSetupCategory] = useState<QuestionCategory | null>(null);
+  const [setupStep, setSetupStep] = useState<"depth" | "audience">("depth");
+  const [selectedDepth, setSelectedDepth] = useState<number | null>(null);
+
   const categories = useMemo(
     () => [allCategory, ...deck.categories].sort((a, b) => a.sortOrder - b.sortOrder),
     [deck.categories],
@@ -70,6 +136,50 @@ export function CategorySelection({ deck }: CategorySelectionProps) {
       { [allCategory.slug]: 0 },
     );
   }, [deck.questions]);
+
+  const setupQuestionPool = useMemo(() => {
+    if (!setupCategory) return [];
+    if (setupCategory.slug === allCategory.slug) return deck.questions;
+    return deck.questions.filter((question) => question.categorySlug === setupCategory.slug);
+  }, [deck.questions, setupCategory]);
+
+  const openSetup = (category: QuestionCategory) => {
+    setSetupCategory(category);
+    setSetupStep("depth");
+    setSelectedDepth(null);
+  };
+
+  const closeSetup = () => {
+    setSetupCategory(null);
+    setSetupStep("depth");
+    setSelectedDepth(null);
+  };
+
+  const chooseDepth = (depth: number) => {
+    setSelectedDepth(depth);
+    setSetupStep("audience");
+  };
+
+  const chooseAudience = (audience: string) => {
+    if (!setupCategory || !selectedDepth) return;
+
+    const params = new URLSearchParams({
+      depth: String(selectedDepth),
+      audience,
+    });
+
+    router.push(`/play/${setupCategory.slug}?${params.toString()}`);
+  };
+
+  const countForDepth = (depth: number) =>
+    setupQuestionPool.filter((question) => question.level <= depth).length;
+
+  const countForAudience = (audience: string) =>
+    setupQuestionPool.filter(
+      (question) =>
+        (!selectedDepth || question.level <= selectedDepth) &&
+        question.audience.includes(audience),
+    ).length;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -151,10 +261,11 @@ export function CategorySelection({ deck }: CategorySelectionProps) {
 
             return (
               <motion.div key={category.slug} variants={itemVariants}>
-                <Link
-                  href={`/play/${category.slug}`}
+                <button
+                  type="button"
+                  onClick={() => openSetup(category)}
                   className={clsx(
-                    "group relative flex flex-col justify-between min-h-[260px] p-6",
+                    "group relative flex w-full flex-col justify-between min-h-[260px] p-6 text-left",
                     "sketchy-panel sketchy-panel-interactive",
                     tiltClass,
                   )}
@@ -207,7 +318,7 @@ export function CategorySelection({ deck }: CategorySelectionProps) {
                     style={{ backgroundColor: category.accent }}
                   />
                 </div>
-                </Link>
+                </button>
               </motion.div>
             );
           })}
@@ -218,6 +329,183 @@ export function CategorySelection({ deck }: CategorySelectionProps) {
           <p>© {new Date().getFullYear()} KhuiDeep — สนทนาอย่างเปิดใจและถนอมความรู้สึก</p>
         </footer>
       </div>
+
+      <AnimatePresence>
+        {setupCategory && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/60 p-4 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.92, y: 24, rotate: -0.8 }}
+              animate={{ scale: 1, y: 0, rotate: 0 }}
+              exit={{ scale: 0.92, y: 24, rotate: 0.8 }}
+              transition={{ type: "spring", damping: 18, stiffness: 190 }}
+              className="sketchy-panel w-full max-w-2xl overflow-hidden bg-paper-50 p-0 text-ink-900 shadow-sketch-strong"
+            >
+              <div
+                className="h-3 w-full border-b-2 border-ink-800"
+                style={{ backgroundColor: setupCategory.accent }}
+                aria-hidden
+              />
+
+              <div className="p-5 sm:p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="inline-flex items-center gap-2 rounded-full border-2 border-ink-800 bg-white px-3 py-1 font-hand text-sm font-bold shadow-sketch-soft">
+                      <Sparkles className="h-4 w-4" aria-hidden />
+                      <span>{setupCategory.name}</span>
+                    </div>
+                    <h2 className="mt-4 font-hand text-3xl font-bold leading-tight text-ink-900 sm:text-4xl">
+                      {setupStep === "depth" ? "วันนี้อยากคุยลึกแค่ไหน?" : "เล่นอยู่กับใคร?"}
+                    </h2>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={closeSetup}
+                    className="btn-doodle flex h-11 w-11 shrink-0 items-center justify-center rounded-note border-2 border-ink-800 bg-white shadow-sketch-soft"
+                    style={{ "--btn-hover-rotate": "1deg" } as React.CSSProperties}
+                    aria-label="ปิดหน้าต่าง"
+                  >
+                    <X className="h-5 w-5" aria-hidden />
+                  </button>
+                </div>
+
+                <div className="mt-5 flex items-center gap-2">
+                  <span
+                    className={clsx(
+                      "h-2.5 flex-1 rounded-full border border-ink-800",
+                      setupStep === "depth" ? "bg-ink-900" : "bg-doodle-mint",
+                    )}
+                  />
+                  <span
+                    className={clsx(
+                      "h-2.5 flex-1 rounded-full border border-ink-800",
+                      setupStep === "audience" ? "bg-ink-900" : "bg-white",
+                    )}
+                  />
+                </div>
+
+                <div className="relative mt-6 min-h-[330px] overflow-hidden">
+                  <AnimatePresence mode="wait">
+                    {setupStep === "depth" ? (
+                      <motion.div
+                        key="depth"
+                        initial={{ opacity: 0, x: -36 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -36 }}
+                        transition={{ duration: 0.22 }}
+                        className="grid gap-3 sm:grid-cols-2"
+                      >
+                        {depthOptions.map((option) => {
+                          const count = countForDepth(option.value);
+                          const isDisabled = count === 0;
+
+                          return (
+                            <button
+                              key={option.value}
+                              type="button"
+                              disabled={isDisabled}
+                              onClick={() => chooseDepth(option.value)}
+                              className={clsx(
+                                "btn-doodle rounded-note border-2 border-ink-800 bg-white p-4 text-left shadow-sketch-soft transition disabled:cursor-not-allowed disabled:opacity-45",
+                                !isDisabled && "hover:-translate-y-0.5",
+                              )}
+                              style={{
+                                "--btn-hover-rotate": "-0.5deg",
+                              } as React.CSSProperties}
+                            >
+                              <span
+                                className="inline-flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink-800 shadow-sketch-soft"
+                                style={{ backgroundColor: option.accent }}
+                              >
+                                <Gauge className="h-5 w-5" aria-hidden />
+                              </span>
+                              <span className="mt-3 block font-hand text-2xl font-bold text-ink-900">
+                                {option.label}
+                              </span>
+                              <span className="mt-1 block text-sm leading-6 text-ink-700">
+                                {option.caption}
+                              </span>
+                              <span className="mt-3 inline-flex rounded-full border border-ink-800 bg-paper-50 px-2.5 py-0.5 text-sm font-bold text-ink-800">
+                                {count} ใบ
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="audience"
+                        initial={{ opacity: 0, x: 44 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 44 }}
+                        transition={{ duration: 0.24 }}
+                        className="space-y-4"
+                      >
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          {audienceOptions.map((option) => {
+                            const count = countForAudience(option.value);
+                            const Icon = option.icon;
+                            const isDisabled = count === 0;
+
+                            return (
+                              <button
+                                key={option.value}
+                                type="button"
+                                disabled={isDisabled}
+                                onClick={() => chooseAudience(option.value)}
+                                className={clsx(
+                                  "btn-doodle flex items-center justify-between gap-3 rounded-note border-2 border-ink-800 bg-white p-4 text-left shadow-sketch-soft transition disabled:cursor-not-allowed disabled:opacity-45",
+                                  !isDisabled && "hover:-translate-y-0.5",
+                                )}
+                                style={{ "--btn-hover-rotate": "0.6deg" } as React.CSSProperties}
+                              >
+                                <span className="flex min-w-0 items-center gap-3">
+                                  <span
+                                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-ink-800 shadow-sketch-soft"
+                                    style={{ backgroundColor: setupCategory.accent }}
+                                  >
+                                    <Icon className="h-5 w-5" aria-hidden />
+                                  </span>
+                                  <span className="min-w-0">
+                                    <span className="block font-hand text-xl font-bold leading-tight text-ink-900">
+                                      {option.label}
+                                    </span>
+                                    <span className="mt-0.5 block text-xs font-semibold text-ink-600">
+                                      {option.value}
+                                    </span>
+                                  </span>
+                                </span>
+                                <span className="shrink-0 rounded-full border border-ink-800 bg-paper-50 px-2.5 py-0.5 text-sm font-bold text-ink-800">
+                                  {count} ใบ
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setSetupStep("depth")}
+                          className="btn-doodle inline-flex items-center gap-2 rounded-note border-2 border-ink-800 bg-white px-4 py-2 font-hand text-lg font-bold shadow-sketch-soft"
+                          style={{ "--btn-hover-rotate": "-0.8deg" } as React.CSSProperties}
+                        >
+                          <ChevronLeft className="h-5 w-5" aria-hidden />
+                          <span>กลับไปเลือกความลึก</span>
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }

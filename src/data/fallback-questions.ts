@@ -35,7 +35,21 @@ export const fallbackCategories: QuestionCategory[] = [
   },
 ];
 
-export const fallbackQuestions: DeepQuestion[] = [
+const questionSafetyDefaults = {
+  audience: [],
+  sensitivity: [],
+  requiresConsent: false,
+  defaultPool: true,
+  contentNote: "",
+  aftercareLevel: 0,
+};
+
+const fallbackQuestionCards: Array<
+  Omit<
+    DeepQuestion,
+    "audience" | "sensitivity" | "requiresConsent" | "defaultPool" | "contentNote" | "aftercareLevel"
+  >
+> = [
   {
     id: "icebreaker-01",
     categoryId: "cat-icebreaker",
@@ -397,6 +411,11 @@ export const fallbackQuestions: DeepQuestion[] = [
     tags: ["ขอบคุณ", "ปล่อยวาง"],
   },
 ];
+
+export const fallbackQuestions: DeepQuestion[] = fallbackQuestionCards.map((question) => ({
+  ...questionSafetyDefaults,
+  ...question,
+}));
 
 export const fallbackDeck: QuestionDeck = {
   categories: fallbackCategories,
