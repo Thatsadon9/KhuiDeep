@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { clsx } from "clsx";
+import { motion, useMotionValue, useTransform, useSpring, animate } from "framer-motion";
 import {
   ArrowLeft,
   BookOpenText,
@@ -11,8 +12,11 @@ import {
   RotateCcw,
   Shuffle,
   Sparkles,
+  Lightbulb,
+  Users,
 } from "lucide-react";
 import { FlippingCard } from "@/components/flipping-card";
+import { ThemeToggle } from "@/components/theme-toggle";
 import type { DeepQuestion, QuestionCategory, QuestionDeck } from "@/types";
 
 type KhuiDeepPlayProps = {
@@ -42,6 +46,21 @@ function pickRandomQuestion(pool: DeepQuestion[], currentId?: string) {
   return candidates[Math.floor(Math.random() * candidates.length)] ?? pool[0];
 }
 
+function getNextPlayer(playersList: string[], lastPlayerName?: string | null) {
+  if (playersList.length === 0) {
+    return null;
+  }
+  if (!lastPlayerName) {
+    return playersList[0];
+  }
+  const lastIndex = playersList.indexOf(lastPlayerName);
+  if (lastIndex === -1) {
+    return playersList[0];
+  }
+  return playersList[(lastIndex + 1) % playersList.length];
+}
+
+
 export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
   // Find current category
   const currentCategory = useMemo(() => {
@@ -64,19 +83,100 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
     question: DeepQuestion | null;
     state: "active" | "exiting" | "entering";
     isFlipped: boolean;
+    assignedPlayer: string | null;
   };
 
   const [visibleCards, setVisibleCards] = useState<CardItem[]>([]);
   const [usedIds, setUsedIds] = useState<Set<string>>(() => new Set());
   const [roundNotice, setRoundNotice] = useState("");
 
-  const [swipeOffset, setSwipeOffset] = useState(0);
-  const [swipeState, setSwipeState] = useState<
-    "idle" | "swiping" | "swiping-away"
-  >("idle");
-  const dragStartX = useRef<number | null>(null);
-  const swipeOffsetRef = useRef(0);
-  const hasMoved = useRef(false);
+  const [swipeState, setSwipeState] = useState<"idle" | "swiping-away">("idle");
+  const x = useMotionValue(0);
+  const cardRotate = useTransform(x, [-200, 200], [-8, 8]);
+  
+  // Create progress 0..1 based on distance dragged (max 150px)
+  const dragProgressRaw = useTransform(x, [-150, 0, 150], [1, 0, 1]);
+  const dragProgress = useSpring(dragProgressRaw, { stiffness: 300, damping: 25 });
+
+  const activeCard = visibleCards.find((c) => c.state === "active");
+  const isFlipped = activeCard?.isFlipped;
+
+  // Reset card X offset smoothly when flipped state changes or new card becomes active
+  useEffect(() => {
+    animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
+  }, [isFlipped, activeCard?.id, x]);
+
+
+  // Multiplayer States
+  const [players, setPlayers] = useState<string[]>([]);
+  const [newPlayerName, setNewPlayerName] = useState("");
+  const [isPlayersLoaded, setIsPlayersLoaded] = useState(false);
+
+  // Load players on mount
+  useEffect(() => {
+    const stored = localStorage.getItem("khui-deep-players");
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setPlayers(parsed);
+        }
+      } catch (e) {
+        console.error("Failed to parse players from localStorage", e);
+      }
+    }
+    setIsPlayersLoaded(true);
+  }, []);
+
+  // Save players to localStorage
+  useEffect(() => {
+    if (isPlayersLoaded) {
+      localStorage.setItem("khui-deep-players", JSON.stringify(players));
+    }
+  }, [players, isPlayersLoaded]);
+
+  const addPlayer = useCallback(() => {
+    const name = newPlayerName.trim();
+    if (!name) return;
+    if (players.includes(name)) {
+      alert("มีชื่อผู้เล่นนี้อยู่ในวงแล้วนะ!");
+      return;
+    }
+    setPlayers((prev) => [...prev, name]);
+    setNewPlayerName("");
+  }, [newPlayerName, players]);
+
+  const removePlayer = useCallback((nameToRemove: string) => {
+    setPlayers((prev) => prev.filter((name) => name !== nameToRemove));
+  }, []);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addPlayer();
+    }
+  }, [addPlayer]);
+
+  // Sync assignedPlayer to current active card when players load/change
+  useEffect(() => {
+    if (players.length > 0) {
+      setVisibleCards((prev) =>
+        prev.map((c) =>
+          c.state === "active" && (!c.assignedPlayer || !players.includes(c.assignedPlayer))
+            ? { ...c, assignedPlayer: players[0] }
+            : c
+        )
+      );
+    } else {
+      setVisibleCards((prev) =>
+        prev.map((c) =>
+          c.state === "active" && c.assignedPlayer
+            ? { ...c, assignedPlayer: null }
+            : c
+        )
+      );
+    }
+  }, [players]);
 
   // Initialize first question on load / change of pool
   useEffect(() => {
@@ -88,6 +188,7 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
           question: initial,
           state: "active",
           isFlipped: false,
+          assignedPlayer: getNextPlayer(players, null),
         },
       ]);
       setUsedIds(new Set([initial.id]));
@@ -96,15 +197,13 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
       setUsedIds(new Set());
     }
     setRoundNotice("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [questionPool]);
 
   const remainingCount = Math.max(questionPool.length - usedIds.size, 0);
 
   const drawQuestion = useCallback((options?: { fromSwipe?: boolean }) => {
-    const canDraw =
-      swipeState === "idle" || (options?.fromSwipe === true && swipeState === "swiping");
-
-    if (questionPool.length === 0 || !canDraw) {
+    if (questionPool.length === 0 || swipeState !== "idle") {
       return;
     }
 
@@ -142,6 +241,7 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
           question: nextQuestion,
           state: "entering" as const,
           isFlipped: false,
+          assignedPlayer: getNextPlayer(players, activeCard?.assignedPlayer),
         },
       ];
     });
@@ -155,15 +255,16 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
         return prev.filter((c) => c.state === "active");
       });
       setSwipeState("idle");
-      swipeOffsetRef.current = 0;
-      setSwipeOffset(0);
+      x.set(0);
     }, 600);
-  }, [questionPool, usedIds, visibleCards, swipeState]);
+  }, [questionPool, usedIds, visibleCards, swipeState, x, players]);
 
   const resetRound = useCallback(() => {
     if (questionPool.length === 0 || swipeState !== "idle") return;
     const nextQuestion = questionPool[Math.floor(Math.random() * questionPool.length)];
     if (!nextQuestion) return;
+
+    const activeCard = visibleCards.find((c) => c.state === "active");
 
     setUsedIds(new Set([nextQuestion.id]));
     setRoundNotice("เริ่มนับกองคำถามรอบนี้ใหม่แล้ว");
@@ -180,6 +281,7 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
           question: nextQuestion,
           state: "entering" as const,
           isFlipped: false,
+          assignedPlayer: getNextPlayer(players, activeCard?.assignedPlayer),
         },
       ];
     });
@@ -193,148 +295,60 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
         return prev.filter((c) => c.state === "active");
       });
       setSwipeState("idle");
-      swipeOffsetRef.current = 0;
-      setSwipeOffset(0);
+      x.set(0);
     }, 600);
-  }, [questionPool, swipeState]);
-
-  const handleDragStart = useCallback((clientX: number) => {
-    if (swipeState !== "idle") return;
-    dragStartX.current = clientX;
-    swipeOffsetRef.current = 0;
-    setSwipeState("swiping");
-    hasMoved.current = false;
-  }, [swipeState]);
-
-  const handleDragMove = useCallback((clientX: number) => {
-    if (dragStartX.current === null || swipeState !== "swiping") return;
-    const deltaX = clientX - dragStartX.current;
-    const limitedDeltaX = deltaX > 0 ? deltaX * 0.25 : deltaX;
-
-    if (Math.abs(deltaX) > 10) {
-      hasMoved.current = true;
-    }
-    swipeOffsetRef.current = limitedDeltaX;
-    setSwipeOffset(limitedDeltaX);
-  }, [swipeState]);
-
-  const handleDragEnd = useCallback(() => {
-    if (dragStartX.current === null) return;
-    dragStartX.current = null;
-
-    if (hasMoved.current && swipeOffsetRef.current < -120) {
-      drawQuestion({ fromSwipe: true });
-    } else {
-      setSwipeState("idle");
-      swipeOffsetRef.current = 0;
-      setSwipeOffset(0);
-    }
-  }, [drawQuestion]);
+  }, [questionPool, swipeState, x, players, visibleCards]);
 
   const animateNextCard = useCallback(() => {
+    animate(x, -200, { duration: 0.4, ease: "easeOut" });
     drawQuestion();
-  }, [drawQuestion]);
+  }, [drawQuestion, x]);
 
   const animateResetCard = useCallback(() => {
+    animate(x, -200, { duration: 0.4, ease: "easeOut" });
     resetRound();
-  }, [resetRound]);
+  }, [resetRound, x]);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button !== 0) return;
-    handleDragStart(e.clientX);
-  }, [handleDragStart]);
+  // Framer motion transformed styles for background cards
+  const bgCard1Style = {
+    y: useTransform(dragProgress, [0, 1], [2.5, 0]),
+    x: useTransform(dragProgress, [0, 1], [1.5, 0]),
+    rotate: useTransform(dragProgress, [0, 1], [1.5, 0]),
+    scale: useTransform(dragProgress, [0, 1], [0.985, 1]),
+  };
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    handleDragMove(e.clientX);
-  }, [handleDragMove]);
-
-  const handleMouseUp = useCallback(() => {
-    if (dragStartX.current !== null) {
-      handleDragEnd();
-    }
-  }, [handleDragEnd]);
-
-  const handleMouseLeave = useCallback(() => {
-    if (dragStartX.current !== null) {
-      handleDragEnd();
-    }
-  }, [handleDragEnd]);
-
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    if (touch) {
-      handleDragStart(touch.clientX);
-    }
-  }, [handleDragStart]);
-
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    if (touch) {
-      handleDragMove(touch.clientX);
-    }
-  }, [handleDragMove]);
-
-  const handleTouchEnd = useCallback(() => {
-    if (dragStartX.current !== null) {
-      handleDragEnd();
-    }
-  }, [handleDragEnd]);
-
-  const cardStyle = useCallback((card: CardItem) => {
-    if (card.state === "active") {
-      let transform = "translateX(0) rotate(0) scale(1)";
-      let opacity = 1;
-      let transition = "transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s";
-      let cursor = "grab";
-
-      if (swipeState === "swiping") {
-        transform = `translateX(${swipeOffset}px) rotate(${swipeOffset * 0.04}deg)`;
-        opacity = 1;
-        transition = "none";
-        cursor = "grabbing";
-      }
-
-      return {
-        transform,
-        opacity,
-        transition,
-        cursor,
-      };
-    } else if (card.state === "exiting") {
-      return {
-        "--exit-start-x": `${swipeOffset}px`,
-        "--exit-start-rotate": `${swipeOffset * 0.04}deg`,
-        cursor: "default",
-        zIndex: 10,
-      } as React.CSSProperties;
-    } else if (card.state === "entering") {
-      return {
-        cursor: "default",
-        zIndex: 20,
-      };
-    }
-    return {};
-  }, [swipeState, swipeOffset]);
+  const bgCard2Style = {
+    y: useTransform(dragProgress, [0, 1], [5, 2.5]),
+    x: useTransform(dragProgress, [0, 1], [-2, 1.5]),
+    rotate: useTransform(dragProgress, [0, 1], [-2, 1.5]),
+    scale: useTransform(dragProgress, [0, 1], [0.97, 0.985]),
+  };
 
 
   // Accent gradient based on the selected category's accent color
-  const dynamicBackgroundGradient = useMemo(() => {
+  const dynamicBackgroundStyle = useMemo(() => {
     return {
       background: `
         radial-gradient(circle at top left, ${currentCategory.accent}4d, transparent 36rem),
         radial-gradient(circle at 85% 15%, ${currentCategory.accent}33, transparent 28rem),
         linear-gradient(90deg, rgba(47, 41, 37, 0.035) 1px, transparent 1px),
         linear-gradient(rgba(47, 41, 37, 0.035) 1px, transparent 1px),
-        #fffdf7
+        var(--paper)
       `,
       backgroundSize: "auto, auto, 32px 32px, 32px 32px, auto",
-    };
+      "--category-glow": currentCategory.accent,
+      "--category-glow-soft": `${currentCategory.accent}66`,
+      "--category-glow-alpha": `${currentCategory.accent}26`,
+      "--bg-glow-1": `${currentCategory.accent}24`,
+      "--bg-glow-2": `${currentCategory.accent}18`,
+      "--btn-glow": currentCategory.accent,
+    } as React.CSSProperties;
   }, [currentCategory.accent]);
 
   return (
     <main
       className="relative min-h-screen overflow-hidden px-4 py-6 text-ink-900 sm:px-6 lg:px-8 transition-colors duration-500"
-      style={dynamicBackgroundGradient}
+      style={dynamicBackgroundStyle}
     >
       {/* Decorative background illustrations */}
       <Image
@@ -349,13 +363,17 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
       <div className="relative mx-auto max-w-5xl">
         {/* Navigation Bar */}
         <nav className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 rounded-note border-2 border-ink-800 bg-white px-4 py-2.5 font-hand text-lg font-bold shadow-sketch-soft transition duration-200 hover:-translate-y-0.5 hover:rotate-[-0.6deg] focus:outline-none focus-visible:ring-4 focus-visible:ring-doodle-lemon"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span>กลับไปเลือกหมวดหมู่</span>
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/"
+              className="btn-doodle group inline-flex items-center gap-2 rounded-note border-2 border-ink-800 bg-white px-4 py-2.5 font-hand text-lg font-bold shadow-sketch-soft focus:outline-none focus-visible:ring-4 focus-visible:ring-doodle-lemon"
+              style={{ "--btn-hover-rotate": "-0.6deg" } as React.CSSProperties}
+            >
+              <ArrowLeft className="h-5 w-5 transition-transform duration-300 group-hover:-translate-x-1" />
+              <span>กลับไปเลือกหมวดหมู่</span>
+            </Link>
+            <ThemeToggle />
+          </div>
 
           <div
             className="inline-flex rotate-[0.5deg] items-center gap-2 rounded-full border-2 border-ink-800 px-4 py-2 font-hand text-lg font-bold shadow-sketch-soft"
@@ -382,8 +400,14 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
           <section className="space-y-6">
             <div className="relative mx-auto w-full max-w-2xl min-h-[410px] sm:min-h-[450px]">
               {/* Stack Background Cards (Visual Decoration) */}
-              <div className="absolute inset-0 transform translate-y-2.5 translate-x-1.5 rotate-[1.5deg] scale-[0.985] border-2 border-ink-800 rounded-[31px_25px_34px_23px] bg-paper-50/70 shadow-sketch-soft pointer-events-none z-0" />
-              <div className="absolute inset-0 transform translate-y-5 translate-x-[-2px] rotate-[-2deg] scale-[0.97] border-2 border-ink-800 rounded-[31px_25px_34px_23px] bg-paper-50/40 shadow-sketch-soft pointer-events-none z-0" />
+              <motion.div 
+                style={bgCard1Style} 
+                className="absolute inset-0 border-2 border-ink-800 rounded-[31px_25px_34px_23px] bg-paper-50/70 shadow-sketch-soft pointer-events-none z-0" 
+              />
+              <motion.div 
+                style={bgCard2Style} 
+                className="absolute inset-0 border-2 border-ink-800 rounded-[31px_25px_34px_23px] bg-paper-50/40 shadow-sketch-soft pointer-events-none z-0" 
+              />
 
               {/* Render Visible Cards */}
               {visibleCards.map((card) => {
@@ -392,28 +416,39 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
                 const isEntering = card.state === "entering";
 
                 return (
-                  <div
+                  <motion.div
                     key={card.id}
                     className={clsx(
                       "tape absolute inset-0 w-full select-none touch-pan-y z-10",
-                      isEntering && "card-enter",
                       isExiting && "card-exit"
                     )}
-                    onMouseDown={isActive ? handleMouseDown : undefined}
-                    onMouseMove={isActive ? handleMouseMove : undefined}
-                    onMouseUp={isActive ? handleMouseUp : undefined}
-                    onMouseLeave={isActive ? handleMouseLeave : undefined}
-                    onTouchStart={isActive ? handleTouchStart : undefined}
-                    onTouchMove={isActive ? handleTouchMove : undefined}
-                    onTouchEnd={isActive ? handleTouchEnd : undefined}
-                    style={cardStyle(card)}
+                    drag="x"
+                    dragListener={isActive}
+                    dragConstraints={{ left: 0, right: 0 }}
+                    dragElastic={0.4}
+                    onDragEnd={(_, info) => {
+                      if (info.offset.x < -100) {
+                        drawQuestion({ fromSwipe: true });
+                      }
+                    }}
+                    initial={isEntering ? { x: 400, rotate: 10, scale: 0.95, opacity: 0 } : false}
+                    animate={isEntering ? { x: 0, rotate: 0, scale: 1, opacity: 1 } : undefined}
+                    transition={isEntering ? { duration: 0.5, ease: [0.34, 1.56, 0.64, 1] } : undefined}
+                    style={
+                      isActive
+                        ? { x, rotate: cardRotate, cursor: "grab" }
+                        : isExiting
+                        ? ({ "--exit-start-x": `${x.get()}px`, "--exit-start-rotate": `${x.get() * 0.04}deg`, zIndex: 10 } as any)
+                        : { zIndex: 20 }
+                    }
                   >
                     <FlippingCard
                       question={card.question}
                       category={currentCategory}
                       isFlipped={card.isFlipped}
+                      assignedPlayer={card.assignedPlayer}
                       onToggle={() => {
-                        if (isActive && swipeState === "idle" && !hasMoved.current) {
+                        if (isActive) {
                           setVisibleCards((prev) =>
                             prev.map((c) =>
                               c.id === card.id ? { ...c, isFlipped: !c.isFlipped } : c
@@ -422,13 +457,14 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
                         }
                       }}
                     />
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
 
-            <p className="text-center font-hand text-base text-ink-600 animate-pulse mt-2">
-              💡 ปัดการ์ดไปทางซ้ายเพื่อเปลี่ยนใบใหม่ได้นะ!
+            <p className="text-center font-hand text-base text-ink-600 animate-pulse mt-2 flex items-center justify-center gap-1.5">
+              <Lightbulb className="h-5 w-5 text-ink-600 shrink-0" aria-hidden />
+              <span>ปัดการ์ดไปทางซ้ายเพื่อเปลี่ยนใบใหม่ได้นะ!</span>
             </p>
 
             {/* Main Action Controllers */}
@@ -438,26 +474,27 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
                 onClick={animateNextCard}
                 disabled={questionPool.length === 0 || swipeState !== "idle"}
                 className={clsx(
-                  "inline-flex items-center gap-2 rounded-note border-2 border-ink-800 px-6 py-3.5 font-hand text-xl font-bold shadow-sketch-soft transition duration-200",
-                  "hover:-translate-y-0.5 hover:rotate-[-0.6deg] focus:outline-none focus-visible:ring-4 focus-visible:ring-doodle-lemon active:translate-y-0",
+                  "btn-doodle group inline-flex items-center gap-2 rounded-note border-2 border-ink-800 px-6 py-3.5 font-hand text-xl font-bold shadow-sketch-soft focus:outline-none focus-visible:ring-4 focus-visible:ring-doodle-lemon",
                   (questionPool.length === 0 || swipeState !== "idle")
                     ? "bg-ink-200/50 cursor-not-allowed opacity-50"
-                    : "bg-doodle-peach hover:bg-doodle-peach/90",
+                    : "hover:bg-doodle-peach/90",
                 )}
                 style={{
+                  "--btn-hover-rotate": "-0.6deg",
                   backgroundColor: (questionPool.length > 0 && swipeState === "idle") ? currentCategory.accent : undefined,
-                }}
+                } as React.CSSProperties}
               >
-                <Shuffle className="h-5 w-5" aria-hidden />
+                <Shuffle className="h-5 w-5 transition-transform duration-500 ease-out group-hover:rotate-180" aria-hidden />
                 <span>สุ่มคำถามถัดไป</span>
               </button>
               <button
                 type="button"
                 onClick={animateResetCard}
                 disabled={questionPool.length === 0 || swipeState !== "idle"}
-                className="inline-flex items-center gap-2 rounded-note border-2 border-ink-800 bg-white px-5 py-3.5 font-hand text-lg font-bold shadow-sketch-soft transition duration-200 hover:-translate-y-0.5 hover:rotate-[0.6deg] focus:outline-none focus-visible:ring-4 focus-visible:ring-doodle-lemon active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-doodle group inline-flex items-center gap-2 rounded-note border-2 border-ink-800 bg-white px-5 py-3.5 font-hand text-lg font-bold shadow-sketch-soft focus:outline-none focus-visible:ring-4 focus-visible:ring-doodle-lemon disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ "--btn-hover-rotate": "0.6deg" } as React.CSSProperties}
               >
-                <RotateCcw className="h-5 w-5" aria-hidden />
+                <RotateCcw className="h-5 w-5 transition-transform duration-500 ease-out group-hover:-rotate-180" aria-hidden />
                 <span>เริ่มนับกองใหม่</span>
               </button>
             </div>
@@ -465,6 +502,64 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
 
           {/* Right Info Panels */}
           <aside className="space-y-5">
+            {/* Multiplayer / Turn Mode Panel */}
+            <div className="sketchy-panel bg-white/90 p-5 paper-tilt-left">
+              <div className="flex items-center gap-2 font-hand text-xl font-bold text-ink-900">
+                <Users className="h-5 w-5 text-ink-800" aria-hidden />
+                <span>ผู้ตอบคำถาม (Multiplayer)</span>
+              </div>
+              <p className="mt-2 text-xs text-ink-700 leading-relaxed">
+                ใส่ชื่อเพื่อนหรือแฟนลงไป ระบบจะเวียนคนตอบตามลำดับรายชื่อเมื่อเปิดการ์ดแต่ละใบ!
+              </p>
+
+              {/* Input for new player */}
+              <div className="mt-4 flex gap-2">
+                <input
+                  type="text"
+                  placeholder="พิมพ์ชื่อ..."
+                  value={newPlayerName}
+                  onChange={(e) => setNewPlayerName(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className="w-full rounded-note border-2 border-ink-800 bg-paper-50 px-3 py-1.5 font-hand text-base text-ink-900 placeholder-ink-700/50 focus:outline-none focus:ring-2 focus:ring-ink-800/40"
+                  maxLength={15}
+                />
+                <button
+                  type="button"
+                  onClick={addPlayer}
+                  className="btn-doodle flex items-center justify-center rounded-note border-2 border-ink-800 bg-doodle-lemon px-4 font-hand text-lg font-bold shadow-sketch-soft text-ink-900"
+                  style={{ "--btn-hover-rotate": "1.5deg" } as React.CSSProperties}
+                >
+                  เพิ่ม
+                </button>
+              </div>
+
+              {/* Player list */}
+              {players.length > 0 ? (
+                <div className="mt-4 space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {players.map((player) => (
+                    <div
+                      key={player}
+                      className="flex items-center justify-between gap-2 rounded-note border border-ink-800 bg-paper-50/80 px-3 py-1.5 font-hand text-base shadow-sketch-soft text-ink-900"
+                    >
+                      <span className="truncate font-semibold text-ink-900">{player}</span>
+                      <button
+                        type="button"
+                        onClick={() => removePlayer(player)}
+                        className="text-red-500 hover:text-red-400 font-bold px-1 transition-colors text-sm hover:scale-110"
+                        title="ลบรายชื่อ"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-4 text-center font-hand text-sm text-ink-500 italic">
+                  ยังไม่มีผู้เล่นร่วมวง...
+                </p>
+              )}
+            </div>
+
             {/* Round Status Info */}
             <div className="sketchy-panel bg-white/90 p-5 paper-tilt-right">
               <div className="flex items-center gap-2 font-hand text-xl font-bold">

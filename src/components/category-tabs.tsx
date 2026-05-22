@@ -35,18 +35,20 @@ export function CategoryTabs({
               onClick={() => onSelect(category.slug)}
               aria-pressed={isSelected}
               className={clsx(
-                "group relative overflow-hidden rounded-note border-2 border-ink-800 px-4 py-3 text-left shadow-sketch-soft transition duration-200",
-                "hover:-translate-y-0.5 hover:rotate-[0.4deg] focus:outline-none focus-visible:ring-4 focus-visible:ring-doodle-lemon",
+                "btn-doodle group relative overflow-hidden rounded-note border-2 border-ink-800 px-4 py-3 text-left shadow-sketch-soft focus:outline-none focus-visible:ring-4 focus-visible:ring-doodle-lemon",
                 isSelected
                   ? "bg-white text-ink-900"
                   : "bg-paper-50/80 text-ink-800 hover:bg-white",
               )}
-              style={{ "--category-accent": category.accent } as React.CSSProperties}
+              style={{
+                "--btn-hover-rotate": "0.4deg",
+                "--category-accent": category.accent,
+              } as React.CSSProperties}
             >
               <span
                 className={clsx(
-                  "absolute inset-y-0 left-0 w-2 transition-all duration-200",
-                  isSelected ? "opacity-100" : "opacity-60 group-hover:opacity-100",
+                  "absolute inset-y-0 left-0 transition-all duration-300",
+                  isSelected ? "opacity-100 w-3" : "opacity-60 w-2 group-hover:opacity-100 group-hover:w-2.5",
                 )}
                 style={{ backgroundColor: category.accent }}
                 aria-hidden

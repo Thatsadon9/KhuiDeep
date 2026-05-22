@@ -4,7 +4,16 @@
 
 :root {
   --paper: #fffdf7;
+  --paper-100: #fbf3df;
+  --paper-200: #f2dfba;
+  --paper-300: #e5c690;
+  
   --ink: #2f2925;
+  --ink-700: #3f352d;
+  --ink-800: #2f2925;
+  --ink-900: #211d1a;
+  
+  --panel-bg-override: rgba(255, 253, 247, 0.95);
 }
 
 * {
@@ -77,14 +86,36 @@ button {
 }
 
 .card-scene {
-  perspective: 1400px;
+  perspective: 1600px;
+  cursor: pointer;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1.1);
+}
+
+.card-scene:hover {
+  transform: translateY(-6px);
+}
+
+.card-scene:active {
+  transform: translateY(-2px) scale(0.99);
+}
+
+.card-scene:hover .card-face {
+  box-shadow:
+    14px 18px 0 rgba(47, 41, 37, 0.16),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+}
+
+.card-scene:active .card-face {
+  box-shadow:
+    4px 6px 0 rgba(47, 41, 37, 0.2),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
 }
 
 .flip-card {
   position: relative;
   min-height: 430px;
   transform-style: preserve-3d;
-  transition: transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1.1);
 }
 
 .flip-card.is-flipped {
@@ -102,9 +133,18 @@ button {
   border-radius: 31px 25px 34px 23px;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+  -webkit-font-smoothing: subpixel-antialiased;
+  -moz-osx-font-smoothing: auto;
   box-shadow:
     8px 10px 0 rgba(47, 41, 37, 0.15),
     inset 0 0 0 1px rgba(255, 255, 255, 0.58);
+  transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1.1), box-shadow 0.4s cubic-bezier(0.25, 0.8, 0.25, 1.1);
+}
+
+.card-face * {
+  -webkit-font-smoothing: subpixel-antialiased;
+  -moz-osx-font-smoothing: auto;
 }
 
 .card-face::after {
@@ -117,13 +157,19 @@ button {
 }
 
 .card-back {
-  transform: rotateY(180deg);
+  transform: rotateY(180deg) translateZ(0.1px);
 }
 
 .rough-underline {
   background-image: linear-gradient(transparent 68%, rgba(247, 231, 167, 0.95) 68%);
-  background-size: 100% 100%;
+  background-size: 0% 100%;
   background-repeat: no-repeat;
+  transition: background-size 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.group:hover .rough-underline,
+.rough-underline:hover {
+  background-size: 100% 100%;
 }
 
 .doodle-grid {
@@ -151,10 +197,39 @@ button {
   }
 }
 
+/* Button & interactive panel springs */
+.btn-doodle {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1.15), box-shadow 0.3s cubic-bezier(0.34, 1.56, 0.64, 1.15), background-color 0.2s ease;
+}
+
+.btn-doodle:hover:not(:disabled) {
+  transform: translateY(-4px) rotate(var(--btn-hover-rotate, -0.6deg));
+  box-shadow: 6px 8px 0 rgba(47, 41, 37, 0.16);
+}
+
+.btn-doodle:active:not(:disabled) {
+  transform: translateY(1px) rotate(0deg);
+  box-shadow: 1px 2px 0 rgba(47, 41, 37, 0.18);
+}
+
+.sketchy-panel-interactive {
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1.1), box-shadow 0.4s cubic-bezier(0.34, 1.56, 0.64, 1.1), background-color 0.2s ease;
+}
+
+.sketchy-panel-interactive:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 10px 14px 0 rgba(47, 41, 37, 0.16);
+}
+
+.sketchy-panel-interactive:active {
+  transform: translateY(-1px) scale(0.99);
+  box-shadow: 3px 4px 0 rgba(47, 41, 37, 0.18);
+}
+
 /* Card Transition Animations */
 @keyframes slideInFromRight {
   0% {
-    transform: translateX(120%) rotate(12deg) scale(0.95);
+    transform: translateX(120%) rotate(10deg) scale(0.95);
     opacity: 0;
   }
   100% {
@@ -175,9 +250,371 @@ button {
 }
 
 .card-enter {
-  animation: slideInFromRight 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.2) forwards;
+  animation: slideInFromRight 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 .card-exit {
   animation: slideOutToLeft 0.45s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
 }
+
+/* Late-Night Mode (โหมดกลางคืนสายดาร์ก) */
+.late-night {
+  --paper: #121214;
+  --paper-100: #1a1a1e;
+  --paper-200: #222226;
+  --paper-300: #2a2a30;
+
+  --ink: #f4f4f5;
+  --ink-700: #d4d4d8;
+  --ink-800: #e4e4e7;
+  --ink-900: #f4f4f5;
+
+  --panel-bg-override: rgba(26, 26, 30, 0.92);
+  color-scheme: dark;
+}
+
+.late-night body {
+  background:
+    radial-gradient(circle at top left, var(--bg-glow-1, rgba(63, 63, 70, 0.12)), transparent 38rem),
+    radial-gradient(circle at 80% 8%, var(--bg-glow-2, rgba(39, 39, 42, 0.15)), transparent 32rem),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    var(--paper);
+  background-size: auto, auto, 32px 32px, 32px 32px, auto;
+  color: var(--ink);
+}
+
+.late-night ::selection {
+  color: #121214;
+  background: var(--category-glow, #fde047);
+  text-shadow: none;
+}
+
+/* Neon glow for sketchy panels */
+.late-night .sketchy-panel {
+  background: rgba(22, 22, 26, 0.88);
+  border-color: var(--category-glow, var(--ink));
+  box-shadow: 
+    4px 6px 0 rgba(0, 0, 0, 0.45),
+    0 0 12px var(--category-glow-soft, rgba(255, 255, 255, 0.05));
+}
+
+.late-night .sketchy-panel::before {
+  border-color: var(--category-glow-soft, rgba(255, 255, 255, 0.15));
+}
+
+/* Card faces in late night mode */
+.late-night .card-face {
+  background: #18181c;
+  border-color: var(--category-glow, var(--ink));
+  box-shadow:
+    8px 10px 0 rgba(0, 0, 0, 0.5),
+    0 0 15px var(--category-glow-soft, rgba(255, 255, 255, 0.08)),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.late-night .card-face::after {
+  border-color: var(--category-glow-soft, rgba(255, 255, 255, 0.12));
+}
+
+.late-night .doodle-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+}
+
+/* Button glow styling */
+.late-night .btn-doodle {
+  border-color: var(--btn-glow, var(--ink));
+  background-color: #1e1e22;
+  color: var(--ink);
+}
+
+.late-night .btn-doodle:hover:not(:disabled) {
+  box-shadow: 
+    5px 7px 0 rgba(0, 0, 0, 0.4),
+    0 0 12px var(--btn-glow, var(--ink));
+  background-color: #242429;
+}
+
+.late-night .btn-doodle:active:not(:disabled) {
+  box-shadow: 1px 2px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* Tape look in late night mode */
+.late-night .tape::before {
+  border-color: var(--category-glow-soft, rgba(255, 255, 255, 0.25));
+  background: var(--category-glow-alpha, rgba(255, 213, 189, 0.15)) !important;
+  box-shadow: 
+    0 4px 10px rgba(0, 0, 0, 0.35),
+    0 0 8px var(--category-glow-soft, transparent);
+  backdrop-filter: blur(2px);
+}
+
+/* Glow helper classes */
+.late-night-glow-text {
+  text-shadow: 0 0 8px var(--category-glow-soft, rgba(255, 255, 255, 0.2));
+}
+
+.late-night .rough-underline {
+  background-image: linear-gradient(transparent 70%, var(--category-glow-alpha, rgba(255, 255, 255, 0.3)) 70%);
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow {
+  animation: spin-slow 12s linear infinite;
+}
+
+/* Late-night Tabs specific styles */
+.late-night button[aria-pressed="true"].btn-doodle {
+  background-color: #222226 !important;
+  color: var(--ink) !important;
+  border-color: var(--category-accent, var(--ink)) !important;
+  box-shadow: 
+    4px 5px 0 rgba(0, 0, 0, 0.4),
+    0 0 12px var(--category-accent) !important;
+}
+
+.late-night button[aria-pressed="false"].btn-doodle {
+  background-color: rgba(20, 20, 22, 0.6) !important;
+  color: #a1a1aa !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.late-night button[aria-pressed="false"].btn-doodle:hover {
+  background-color: #1e1e22 !important;
+  color: var(--ink) !important;
+  border-color: var(--category-accent, var(--ink)) !important;
+  box-shadow: 
+    4px 5px 0 rgba(0, 0, 0, 0.4),
+    0 0 8px var(--category-accent) !important;
+}
+
+/* Late-night Card styles */
+.late-night .card-face {
+  background-color: #18181c !important;
+  border-color: var(--card-accent, var(--ink)) !important;
+  box-shadow: 
+    8px 10px 0 rgba(0, 0, 0, 0.5),
+    0 0 16px var(--card-accent)66,
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* Question mark glow */
+.late-night .card-face div.rounded-\[45\%_55\%_48\%_52\%\] {
+  background-color: rgba(30, 30, 34, 0.75) !important;
+  border-color: var(--card-accent, var(--ink)) !important;
+  box-shadow: 
+    0 6px 15px rgba(0, 0, 0, 0.3),
+    0 0 20px var(--card-accent)80,
+    inset 0 0 12px var(--card-accent)40;
+}
+
+.late-night .card-face div.rounded-\[45\%_55\%_48\%_52\%\] span {
+  color: var(--card-accent) !important;
+  text-shadow: 0 0 8px var(--card-accent)99;
+}
+
+/* Top Right icon in front card */
+.late-night .card-face span.rounded-full {
+  background-color: rgba(30, 30, 34, 0.8) !important;
+  border-color: var(--card-accent, var(--ink)) !important;
+  box-shadow: 0 0 8px var(--card-accent)66;
+  color: var(--card-accent) !important;
+}
+
+/* Category Badge in back card */
+.late-night .card-face span.rounded-full.border-2 {
+  background-color: #1e1e22 !important;
+  border-color: var(--card-accent, var(--ink)) !important;
+  box-shadow: 0 0 8px var(--card-accent)66;
+  color: var(--card-accent) !important;
+}
+
+/* Helper Text in back card */
+.late-night .card-face p.bg-doodle-lemon\/45 {
+  background-color: rgba(253, 224, 71, 0.08) !important;
+  border-left-color: #fde047 !important;
+  color: #fef08a !important;
+  box-shadow: 0 0 8px rgba(253, 224, 71, 0.15);
+}
+
+/* Question Title in back card */
+.late-night .card-face p.font-hand.text-2xl {
+  color: #f4f4f5 !important;
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.15);
+}
+
+/* Tags in back card */
+.late-night .card-face span.bg-white {
+  background-color: #1e1e22 !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #a1a1aa !important;
+}
+
+.late-night .card-face span.bg-white:hover {
+  border-color: var(--card-accent, var(--ink)) !important;
+  color: var(--ink) !important;
+  box-shadow: 0 0 6px var(--card-accent)50;
+}
+
+/* Header highlight badge */
+.late-night header .bg-doodle-lemon {
+  background-color: rgba(253, 224, 71, 0.15) !important;
+  border-color: #fde047 !important;
+  color: #fef08a !important;
+  box-shadow: 0 0 10px rgba(253, 224, 71, 0.2);
+}
+
+/* Main title */
+.late-night h1 {
+  color: #f4f4f5 !important;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
+}
+
+.late-night h1 span {
+  color: #a1a1aa !important;
+}
+
+/* Category selections Header highlight badge */
+.late-night main > div > header > div.bg-doodle-lemon {
+  background-color: rgba(253, 224, 71, 0.15) !important;
+  border-color: #fde047 !important;
+  color: #fef08a !important;
+  box-shadow: 0 0 10px rgba(253, 224, 71, 0.2);
+}
+
+/* Current category status badge in Play room */
+.late-night nav div.rounded-full {
+  background-color: #1e1e22 !important;
+  border-color: var(--category-glow, var(--ink)) !important;
+  color: var(--category-glow) !important;
+  box-shadow: 0 0 10px var(--category-glow-soft);
+}
+
+/* Category header in play room */
+.late-night header.rounded-note {
+  background-color: rgba(22, 22, 26, 0.88) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.late-night header.rounded-note h1 {
+  color: #f4f4f5 !important;
+}
+
+/* Category Selection Panel background icon */
+.late-night .sketchy-panel-interactive div.w-12 {
+  background-color: #1e1e22 !important;
+  border-color: var(--category-glow, var(--ink)) !important;
+  color: var(--category-glow) !important;
+  box-shadow: 0 0 8px var(--category-glow-soft);
+}
+
+.late-night .sketchy-panel-interactive span.bg-white {
+  background-color: #1e1e22 !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #a1a1aa !important;
+}
+
+.late-night .sketchy-panel-interactive:hover div.w-12 {
+  box-shadow: 0 0 12px var(--category-glow);
+}
+
+/* Playroom status bar progress */
+.late-night div.bg-paper-50 {
+  background-color: #141416 !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Accent headers for panels in play page */
+.late-night .flex-col.rounded-note.border-dashed {
+  background-color: rgba(22, 22, 26, 0.7) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.late-night .flex-col.rounded-note.border-dashed span.rounded-full {
+  background-color: #1e1e22 !important;
+  border-color: var(--category-glow, var(--ink)) !important;
+  color: var(--category-glow) !important;
+  box-shadow: 0 0 8px var(--category-glow-soft);
+}
+
+/* Decorative absolute shapes */
+.late-night div.bg-doodle-sky\/30 {
+  background-color: rgba(185, 217, 242, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.late-night div.bg-doodle-mint\/40 {
+  background-color: rgba(204, 235, 217, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Player Turn Badge in card back */
+.player-turn-badge {
+  animation: pop-in-bounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.player-turn-name {
+  transition: transform 0.2s ease, text-shadow 0.2s ease;
+}
+
+.player-turn-badge:hover .player-turn-name {
+  transform: scale(1.05) rotate(1deg);
+}
+
+@keyframes pop-in-bounce {
+  0% {
+    transform: scale(0.85) rotate(-2deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.04) rotate(1deg);
+  }
+  100% {
+    transform: scale(1) rotate(-0.5deg);
+    opacity: 1;
+  }
+}
+
+/* Late-night adjustments for Player Turn Badge and inputs */
+.late-night .player-turn-badge {
+  background-color: rgba(204, 235, 217, 0.12) !important;
+  border-color: var(--category-glow, #4ade80) !important;
+  color: var(--category-glow, #4ade80) !important;
+  box-shadow: 
+    3px 5px 0 rgba(0, 0, 0, 0.45),
+    0 0 10px var(--category-glow-soft, rgba(74, 222, 128, 0.2)) !important;
+}
+
+.late-night .player-turn-name {
+  background-color: rgba(20, 20, 22, 0.8) !important;
+  border-color: var(--category-glow, #4ade80) !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 5px var(--category-glow, #4ade80);
+}
+
+/* Custom scrollbar for player list */
+.sketchy-panel div::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sketchy-panel div::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sketchy-panel div::-webkit-scrollbar-thumb {
+  background-color: var(--ink-700);
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+
+.late-night .sketchy-panel div::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+
+

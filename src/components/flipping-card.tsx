@@ -1,7 +1,8 @@
 "use client";
 
 import { clsx } from "clsx";
-import { HeartHandshake, MessageCircleHeart } from "lucide-react";
+import { motion } from "framer-motion";
+import { HeartHandshake, MessageCircleHeart, Smile, Sparkles } from "lucide-react";
 import type { DeepQuestion, QuestionCategory } from "@/types";
 
 type FlippingCardProps = {
@@ -9,6 +10,7 @@ type FlippingCardProps = {
   category: QuestionCategory | undefined;
   isFlipped: boolean;
   onToggle: () => void;
+  assignedPlayer?: string | null;
 };
 
 export function FlippingCard({
@@ -16,6 +18,7 @@ export function FlippingCard({
   category,
   isFlipped,
   onToggle,
+  assignedPlayer,
 }: FlippingCardProps) {
   const accent = category?.accent ?? "#ffd5bd";
   const categoryName = category?.name ?? "คำถาม";
@@ -27,8 +30,17 @@ export function FlippingCard({
       onClick={onToggle}
       aria-pressed={isFlipped}
       aria-label={isFlipped ? "ปิดการ์ดคำถาม" : "เปิดการ์ดคำถาม"}
+      style={{
+        "--card-accent": accent,
+      } as React.CSSProperties}
     >
-      <div className={clsx("flip-card", isFlipped && "is-flipped")}>
+      <motion.div
+        className="relative w-full h-full min-h-[430px]"
+        initial={false}
+        animate={{ rotateY: isFlipped ? 180 : 0 }}
+        transition={{ type: "spring", stiffness: 200, damping: 20 }}
+        style={{ transformStyle: "preserve-3d" }}
+      >
         <article
           className="card-face doodle-grid justify-between bg-paper-50 p-7 sm:p-9"
           style={{ backgroundColor: accent }}
@@ -57,23 +69,37 @@ export function FlippingCard({
           </div>
         </article>
 
-        <article className="card-face card-back justify-between bg-paper-50 p-7 sm:p-9">
-          <div className="relative z-10 flex items-center justify-between gap-4">
-            <span
-              className="rounded-full border-2 border-ink-800 px-4 py-1.5 font-hand text-base font-bold shadow-sketch-soft"
-              style={{ backgroundColor: accent }}
-            >
-              {categoryName}
-            </span>
-            <HeartHandshake className="h-7 w-7 text-ink-800" aria-hidden />
+        <article className="card-face card-back justify-between bg-paper-50 p-7 sm:p-9 pb-10 sm:pb-12">
+          <div className="relative z-10 flex flex-col gap-1.5">
+            <div className="flex items-center justify-between gap-4">
+              <span
+                className="rounded-full border-2 border-ink-800 px-4 py-1.5 font-hand text-base font-bold shadow-sketch-soft"
+                style={{ backgroundColor: accent }}
+              >
+                {categoryName}
+              </span>
+              <HeartHandshake className="h-7 w-7 text-ink-800" aria-hidden />
+            </div>
+
+            {assignedPlayer && (
+              <div className="player-turn-badge self-start inline-flex items-center gap-2 rounded-note border-2 border-ink-800 bg-doodle-lemon px-3 py-1.5 font-hand text-base font-bold shadow-sketch-soft text-ink-900">
+                <Smile className="h-5 w-5" aria-hidden />
+                <span>คำถามนี้</span>
+                <span className="player-turn-name mx-1 rounded px-1.5 py-0.5 border border-ink-800 bg-white text-ink-900 underline decoration-wavy decoration-ink-800/60">
+                  {assignedPlayer}
+                </span>
+                <span>ต้องตอบ!</span>
+                <Sparkles className="h-4.5 w-4.5 animate-pulse" aria-hidden />
+              </div>
+            )}
           </div>
 
-          <div className="relative z-10 my-8">
-            <p className="font-hand text-2xl font-bold leading-relaxed text-ink-900 sm:text-3xl md:text-4xl">
+          <div className="relative z-10 my-6">
+            <p className="font-hand text-2xl font-bold !leading-[1.6] text-ink-900 sm:text-3xl md:text-4xl">
               {question?.question ?? "ยังไม่มีคำถามในหมวดนี้"}
             </p>
             {question?.helperText ? (
-              <p className="mt-6 border-l-4 border-ink-800 bg-doodle-lemon/45 px-4 py-3 text-base leading-8 text-ink-800 sm:text-lg">
+              <p className="mt-5 border-l-4 border-ink-800 bg-doodle-lemon/45 px-4 py-3 text-base leading-8 text-ink-800 sm:text-lg">
                 {question.helperText}
               </p>
             ) : null}
@@ -90,7 +116,7 @@ export function FlippingCard({
             ))}
           </div>
         </article>
-      </div>
+      </motion.div>
     </button>
   );
 }

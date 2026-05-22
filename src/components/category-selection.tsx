@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useMemo } from "react";
 import { clsx } from "clsx";
+import { motion } from "framer-motion";
 import {
   Sparkles,
   MessageCircle,
@@ -12,6 +13,7 @@ import {
   Users,
   Layers,
 } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 import type { QuestionCategory, QuestionDeck } from "@/types";
 
 type CategorySelectionProps = {
@@ -68,8 +70,31 @@ export function CategorySelection({ deck }: CategorySelectionProps) {
     );
   }, [deck.questions]);
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.12 },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 40, scale: 0.95 },
+    show: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: { type: "spring", stiffness: 300, damping: 24 },
+    },
+  };
+
   return (
     <main className="relative min-h-screen overflow-hidden px-4 py-8 text-ink-900 sm:px-6 lg:px-8">
+      {/* Theme Switcher Button */}
+      <div className="absolute right-4 top-4 z-50 flex items-center gap-2 sm:right-6 sm:top-6 lg:right-12 lg:top-8">
+        <ThemeToggle />
+      </div>
+
       {/* Decorative background elements */}
       <Image
         src="/sketch-notes.svg"
@@ -102,26 +127,34 @@ export function CategorySelection({ deck }: CategorySelectionProps) {
         </header>
 
         {/* Categories Grid */}
-        <section aria-label="เลือกหมวดหมู่คำถาม" className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <motion.section
+          aria-label="เลือกหมวดหมู่คำถาม"
+          className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3"
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+        >
           {categories.map((category, index) => {
             const tiltClass = tilts[index % tilts.length];
             const icon = getCategoryIcon(category.slug);
             const count = counts[category.slug] ?? 0;
 
             return (
-              <Link
-                key={category.slug}
-                href={`/play/${category.slug}`}
-                className={clsx(
-                  "group relative flex flex-col justify-between min-h-[260px] p-6",
-                  "sketchy-panel transition-all duration-300 ease-out",
-                  "hover:-translate-y-2 hover:scale-[1.02] hover:shadow-sketch-md",
-                  tiltClass,
-                )}
-                style={{
-                  backgroundColor: "rgba(255, 253, 247, 0.95)",
-                }}
-              >
+              <motion.div key={category.slug} variants={itemVariants}>
+                <Link
+                  href={`/play/${category.slug}`}
+                  className={clsx(
+                    "group relative flex flex-col justify-between min-h-[260px] p-6",
+                    "sketchy-panel sketchy-panel-interactive",
+                    tiltClass,
+                  )}
+                  style={{
+                    backgroundColor: "var(--panel-bg-override, rgba(255, 255, 255, 0.95))",
+                    "--category-glow": category.accent,
+                    "--category-glow-soft": `${category.accent}66`,
+                    "--category-glow-alpha": `${category.accent}26`,
+                  } as React.CSSProperties}
+                >
                 {/* Accent Color Band */}
                 <div
                   className="absolute top-0 inset-x-0 h-3 rounded-t-[22px_16px_0_0]"
@@ -134,7 +167,7 @@ export function CategorySelection({ deck }: CategorySelectionProps) {
                   <div className="flex items-start justify-between gap-4">
                     {/* Icon Box */}
                     <div
-                      className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-ink-800 shadow-sketch-soft transition-transform duration-300 group-hover:rotate-[-6deg]"
+                      className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-ink-800 shadow-sketch-soft transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1.1)] group-hover:rotate-[-8deg] group-hover:scale-105"
                       style={{ backgroundColor: category.accent }}
                     >
                       {icon}
@@ -156,18 +189,19 @@ export function CategorySelection({ deck }: CategorySelectionProps) {
 
                 {/* Card Bottom / CTA */}
                 <div className="mt-6 border-t border-dashed border-ink-800/20 pt-4 flex items-center justify-between text-ink-800">
-                  <span className="font-hand text-lg font-bold group-hover:rough-underline transition-all duration-200">
+                  <span className="font-hand text-lg font-bold rough-underline">
                     หยิบการ์ดหมวดนี้ →
                   </span>
                   <span
-                    className="h-2 w-2 rounded-full transition-transform duration-300 group-hover:scale-150"
+                    className="h-2 w-2 rounded-full transition-transform duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1.1)] group-hover:scale-[1.7]"
                     style={{ backgroundColor: category.accent }}
                   />
                 </div>
-              </Link>
+                </Link>
+              </motion.div>
             );
           })}
-        </section>
+        </motion.section>
 
         {/* Footer info note */}
         <footer className="mt-16 text-center text-xs text-ink-500 font-body">

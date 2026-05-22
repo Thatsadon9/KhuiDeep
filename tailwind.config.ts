@@ -11,15 +11,15 @@ const config: Config = {
     extend: {
       colors: {
         paper: {
-          50: "#fffdf7",
-          100: "#fbf3df",
-          200: "#f2dfba",
-          300: "#e5c690",
+          50: "var(--paper, #fffdf7)",
+          100: "var(--paper-100, #fbf3df)",
+          200: "var(--paper-200, #f2dfba)",
+          300: "var(--paper-300, #e5c690)",
         },
         ink: {
-          700: "#3f352d",
-          800: "#2f2925",
-          900: "#211d1a",
+          700: "var(--ink-700, #3f352d)",
+          800: "var(--ink-800, #2f2925)",
+          900: "var(--ink-900, #211d1a)",
         },
         doodle: {
           mint: "#ccebd9",
