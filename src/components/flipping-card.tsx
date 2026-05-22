@@ -1,6 +1,5 @@
 "use client";
 
-import { clsx } from "clsx";
 import { motion } from "framer-motion";
 import { HeartHandshake, MessageCircleHeart, Smile, Sparkles } from "lucide-react";
 import type { DeepQuestion, QuestionCategory } from "@/types";

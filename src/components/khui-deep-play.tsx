@@ -202,7 +202,7 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
 
   const remainingCount = Math.max(questionPool.length - usedIds.size, 0);
 
-  const drawQuestion = useCallback((options?: { fromSwipe?: boolean }) => {
+  const drawQuestion = useCallback(() => {
     if (questionPool.length === 0 || swipeState !== "idle") {
       return;
     }
@@ -428,7 +428,7 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
                     dragElastic={0.4}
                     onDragEnd={(_, info) => {
                       if (info.offset.x < -100) {
-                        drawQuestion({ fromSwipe: true });
+                        drawQuestion();
                       }
                     }}
                     initial={isEntering ? { x: 400, rotate: 10, scale: 0.95, opacity: 0 } : false}
@@ -438,7 +438,7 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
                       isActive
                         ? { x, rotate: cardRotate, cursor: "grab" }
                         : isExiting
-                        ? ({ "--exit-start-x": `${x.get()}px`, "--exit-start-rotate": `${x.get() * 0.04}deg`, zIndex: 10 } as any)
+                        ? ({ "--exit-start-x": `${x.get()}px`, "--exit-start-rotate": `${x.get() * 0.04}deg`, zIndex: 10 } as React.CSSProperties)
                         : { zIndex: 20 }
                     }
                   >
