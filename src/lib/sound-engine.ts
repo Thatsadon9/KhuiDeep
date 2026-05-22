@@ -20,12 +20,14 @@ export type SoundPreferences = {
   sfxEnabled: boolean;
   bgmEnabled: boolean;
   bgmVolume: number; // 0..1
+  bgmTrackId: BgmTrackId;
 };
 
 const DEFAULT_PREFS: SoundPreferences = {
   sfxEnabled: true,
   bgmEnabled: false,
   bgmVolume: 0.35,
+  bgmTrackId: BGM_TRACKS[0].id,
 };
 
 const STORAGE_KEY = "khui-deep-sound-prefs";
@@ -296,7 +298,7 @@ export class SoundEngine {
   }
 
   async playBgm() {
-    const track = BGM_TRACKS[0];
+    const track = BGM_TRACKS.find((t) => t.id === this._prefs.bgmTrackId) ?? BGM_TRACKS[0];
     const audio = this.ensureBgmAudio();
 
     const url = track.url;
@@ -311,7 +313,7 @@ export class SoundEngine {
     try {
       await audio.play();
       this.updatePrefs({ bgmEnabled: true });
-    } catch (err) {
+    } catch (_err) {
       console.warn(`[KhuiDeep BGM] ❌ เล่นเพลงไม่ได้ (ไม่พบไฟล์ ${url})`);
       console.warn("👉 วิธีแก้: ให้สร้างโฟลเดอร์ public/audio/ และโหลดไฟล์เสียงมาใส่ ตั้งชื่อเป็น track1.mp3");
       this.updatePrefs({ bgmEnabled: false });
@@ -339,6 +341,26 @@ export class SoundEngine {
       this.bgmAudio.volume = clamped;
     }
     this.updatePrefs({ bgmVolume: clamped });
+  }
+
+  selectTrack(id: BgmTrackId) {
+    if (this._prefs.bgmTrackId === id) return;
+    this.updatePrefs({ bgmTrackId: id });
+    if (this._prefs.bgmEnabled) {
+      this.playBgm();
+    }
+  }
+
+  nextTrack() {
+    const currentIndex = BGM_TRACKS.findIndex((t) => t.id === this._prefs.bgmTrackId);
+    const nextIndex = (currentIndex + 1) % BGM_TRACKS.length;
+    this.selectTrack(BGM_TRACKS[nextIndex].id);
+  }
+
+  prevTrack() {
+    const currentIndex = BGM_TRACKS.findIndex((t) => t.id === this._prefs.bgmTrackId);
+    const prevIndex = (currentIndex - 1 + BGM_TRACKS.length) % BGM_TRACKS.length;
+    this.selectTrack(BGM_TRACKS[prevIndex].id);
   }
 
   // ========== SFX Toggle ==========
