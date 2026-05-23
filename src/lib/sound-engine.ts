@@ -121,44 +121,47 @@ export class SoundEngine {
   playFlip() {
     if (!this._prefs.sfxEnabled) return;
     
-    // Haptic Feedback (สั่นเบา ๆ 15ms)
+    // Haptic Feedback (สั่นเบา ๆ 10ms)
     if (typeof navigator !== "undefined" && navigator.vibrate) {
-      navigator.vibrate(15);
+      navigator.vibrate(10);
     }
 
     const ctx = this.ensureCtx();
     const now = ctx.currentTime;
 
-    // Use a single organic noise buffer
+    // 1. Cute UI "Pop" / "Tick" (Tonal component for playfulness)
+    const pop = ctx.createOscillator();
+    pop.type = "sine";
+    pop.frequency.setValueAtTime(800, now);
+    pop.frequency.exponentialRampToValueAtTime(400, now + 0.05);
+
+    const popGain = ctx.createGain();
+    popGain.gain.setValueAtTime(0.15, now);
+    popGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+    
+    pop.connect(popGain).connect(ctx.destination);
+    pop.start(now);
+    pop.stop(now + 0.06);
+
+    // 2. Soft Paper Rustle (Friction component)
     const noise = ctx.createBufferSource();
-    noise.buffer = this.createNoiseBuffer(0.15, ctx.sampleRate);
+    noise.buffer = this.createNoiseBuffer(0.1, ctx.sampleRate);
 
-    // 1. Paper bend/snap (Lowpass thump)
-    const snapFilter = ctx.createBiquadFilter();
-    snapFilter.type = "lowpass";
-    snapFilter.frequency.setValueAtTime(1000, now);
-    snapFilter.frequency.exponentialRampToValueAtTime(150, now + 0.06);
-
-    const snapGain = ctx.createGain();
-    snapGain.gain.setValueAtTime(1.2, now);
-    snapGain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
+    // Bandpass for a softer paper sound, removing harsh highs
+    const paperFilter = ctx.createBiquadFilter();
+    paperFilter.type = "bandpass";
+    paperFilter.frequency.setValueAtTime(1800, now);
+    paperFilter.frequency.linearRampToValueAtTime(900, now + 0.08);
+    paperFilter.Q.value = 1.2;
     
-    noise.connect(snapFilter).connect(snapGain).connect(ctx.destination);
+    const paperGain = ctx.createGain();
+    paperGain.gain.setValueAtTime(0, now);
+    paperGain.gain.linearRampToValueAtTime(0.35, now + 0.02);
+    paperGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
 
-    // 2. Paper rustle/friction (Highpass swoosh)
-    const rustleFilter = ctx.createBiquadFilter();
-    rustleFilter.type = "highpass";
-    rustleFilter.frequency.value = 2500;
-    
-    const rustleGain = ctx.createGain();
-    rustleGain.gain.setValueAtTime(0, now);
-    rustleGain.gain.linearRampToValueAtTime(0.6, now + 0.03);
-    rustleGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-
-    noise.connect(rustleFilter).connect(rustleGain).connect(ctx.destination);
-
+    noise.connect(paperFilter).connect(paperGain).connect(ctx.destination);
     noise.start(now);
-    noise.stop(now + 0.15);
+    noise.stop(now + 0.1);
   }
 
   /**
