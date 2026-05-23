@@ -698,11 +698,7 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
                   ความลึก: {selectedDepthLabel}
                 </span>
               )}
-              {selectedAudienceLabel && (
-                <span className="rounded-full border-2 border-ink-800 bg-doodle-mint px-3 py-1 font-hand text-sm font-bold shadow-sketch-soft">
-                  เล่นกับ: {selectedAudienceLabel}
-                </span>
-              )}
+
             </div>
           )}
         </header>
@@ -711,7 +707,7 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
         <div className="grid items-start gap-8 lg:grid-cols-[1fr_280px]">
           {/* Card Play Zone */}
           <section className="space-y-6">
-            <div className="relative mx-auto w-full max-w-2xl min-h-[470px] sm:min-h-[520px]">
+            <div className="relative mx-auto w-full max-w-2xl min-h-[400px] sm:min-h-[520px]">
               {/* Stack Background Cards (Visual Decoration) */}
               <motion.div 
                 style={bgCard1Style} 

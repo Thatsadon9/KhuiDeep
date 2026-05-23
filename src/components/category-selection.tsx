@@ -234,7 +234,7 @@ export function CategorySelection({ deck }: CategorySelectionProps) {
             <Sparkles className="h-5 w-5 animate-pulse text-ink-900" aria-hidden />
             <span>พื้นที่คุยแบบใจเย็น</span>
           </div>
-          <h1 className="mt-6 font-hand text-6xl font-bold leading-tight tracking-normal text-ink-900 sm:text-7xl">
+          <h1 className="mt-6 font-hand text-5xl font-bold leading-tight tracking-normal text-ink-900 sm:text-7xl">
             KhuiDeep
             <span className="block text-4xl mt-1 text-ink-800 font-medium">คุยดีพ</span>
           </h1>
@@ -343,15 +343,15 @@ export function CategorySelection({ deck }: CategorySelectionProps) {
               animate={{ scale: 1, y: 0, rotate: 0 }}
               exit={{ scale: 0.92, y: 24, rotate: 0.8 }}
               transition={{ type: "spring", damping: 18, stiffness: 190 }}
-              className="sketchy-panel w-full max-w-2xl overflow-hidden bg-paper-50 p-0 text-ink-900 shadow-sketch-strong"
+              className="sketchy-panel w-full max-w-2xl overflow-hidden bg-paper-50 p-0 text-ink-900 shadow-sketch-strong flex flex-col max-h-[90vh]"
             >
               <div
-                className="h-3 w-full border-b-2 border-ink-800"
+                className="h-3 w-full shrink-0 border-b-2 border-ink-800"
                 style={{ backgroundColor: setupCategory.accent }}
                 aria-hidden
               />
 
-              <div className="p-5 sm:p-6">
+              <div className="p-5 sm:p-6 overflow-y-auto">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <div className="inline-flex items-center gap-2 rounded-full border-2 border-ink-800 bg-white px-3 py-1 font-hand text-sm font-bold shadow-sketch-soft">
@@ -389,7 +389,7 @@ export function CategorySelection({ deck }: CategorySelectionProps) {
                   />
                 </div>
 
-                <div className="relative mt-6 min-h-[330px] overflow-hidden">
+                <div className="relative mt-6 min-h-[330px] overflow-hidden p-2 -m-2">
                   <AnimatePresence mode="wait">
                     {setupStep === "depth" ? (
                       <motion.div
@@ -474,9 +474,6 @@ export function CategorySelection({ deck }: CategorySelectionProps) {
                                   <span className="min-w-0">
                                     <span className="block font-hand text-xl font-bold leading-tight text-ink-900">
                                       {option.label}
-                                    </span>
-                                    <span className="mt-0.5 block text-xs font-semibold text-ink-600">
-                                      {option.value}
                                     </span>
                                   </span>
                                 </span>

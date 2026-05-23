@@ -16,8 +16,9 @@ import {
   EyeOff,
   Search,
   Download,
-  Braces,
-  AlertCircle
+  AlertCircle,
+  Copy,
+  Braces
 } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabase";
 
@@ -1154,7 +1155,7 @@ export function KhuiDeepAdmin() {
         </motion.nav>
 
         {/* Tab Selection */}
-        <motion.div variants={itemVariants} className="mb-6 flex gap-4 border-b border-dashed border-ink-800/20 pb-4">
+        <motion.div variants={itemVariants} className="mb-6 flex flex-col sm:flex-row gap-4 border-b border-dashed border-ink-800/20 pb-4">
           <button
             onClick={() => {
               setActiveTab("categories");
@@ -1585,6 +1586,38 @@ export function KhuiDeepAdmin() {
                         <div className="flex flex-wrap gap-2 sm:justify-end">
                           <button
                             type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(bulkJsonEditInput)
+                                .then(() => showToast("คัดลอก JSON แล้ว!", "success"))
+                                .catch(() => showToast("ไม่สามารถคัดลอกได้", "error"));
+                            }}
+                            className="btn-doodle flex items-center gap-1.5 rounded-note border-2 border-ink-800 bg-white px-3 py-1.5 font-hand text-base font-bold shadow-sketch-soft"
+                          >
+                            <Copy className="h-4 w-4" />
+                            <span>คัดลอก</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!bulkJsonEditInput.trim()) return;
+                              const blob = new Blob([bulkJsonEditInput], { type: "application/json;charset=utf-8" });
+                              const downloadUrl = URL.createObjectURL(blob);
+                              const link = document.createElement("a");
+                              link.href = downloadUrl;
+                              link.download = `khui-deep-bulk-questions-${new Date().toISOString().slice(0,10)}.json`;
+                              document.body.appendChild(link);
+                              link.click();
+                              link.remove();
+                              URL.revokeObjectURL(downloadUrl);
+                              showToast("ดาวน์โหลด JSON แล้ว!", "success");
+                            }}
+                            className="btn-doodle flex items-center gap-1.5 rounded-note border-2 border-ink-800 bg-white px-3 py-1.5 font-hand text-base font-bold shadow-sketch-soft"
+                          >
+                            <Download className="h-4 w-4" />
+                            <span>ดาวน์โหลด</span>
+                          </button>
+                          <button
+                            type="button"
                             onClick={handleAppendBulkQuestionTemplate}
                             className="btn-doodle flex items-center gap-1.5 rounded-note border-2 border-ink-800 bg-doodle-sky px-3 py-1.5 font-hand text-base font-bold shadow-sketch-soft"
                           >
@@ -1611,7 +1644,7 @@ export function KhuiDeepAdmin() {
                           onChange={(e) => setBulkJsonEditInput(e.target.value)}
                           rows={30}
                           spellCheck={false}
-                          className="w-full rounded-note border-2 border-ink-800 bg-paper-50 px-3 py-2 font-mono text-sm leading-relaxed text-ink-900 placeholder-ink-700/40 focus:outline-none resize-y min-h-[560px]"
+                          className="w-full rounded-note border-2 border-ink-800 bg-paper-50 px-3 py-2 font-mono text-sm leading-relaxed text-ink-900 placeholder-ink-700/40 focus:outline-none resize-y min-h-[300px] sm:min-h-[560px]"
                         />
 
                         {bulkJsonEditValidation.valid !== null && (
@@ -1689,7 +1722,7 @@ export function KhuiDeepAdmin() {
                           onChange={(e) => setJsonEditInput(e.target.value)}
                           rows={24}
                           spellCheck={false}
-                          className="w-full rounded-note border-2 border-ink-800 bg-paper-50 px-3 py-2 font-mono text-sm leading-relaxed text-ink-900 placeholder-ink-700/40 focus:outline-none resize-y min-h-[420px]"
+                          className="w-full rounded-note border-2 border-ink-800 bg-paper-50 px-3 py-2 font-mono text-sm leading-relaxed text-ink-900 placeholder-ink-700/40 focus:outline-none resize-y min-h-[300px] sm:min-h-[420px]"
                         />
 
                         {jsonEditValidation.valid !== null && (
