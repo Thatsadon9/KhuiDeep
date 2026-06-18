@@ -30,6 +30,7 @@ type DbCategory = {
   accent: string;
   sort_order: number;
   is_active: boolean;
+  talk_modes?: string[] | null;
 };
 
 type DbQuestion = {
@@ -46,6 +47,7 @@ type DbQuestion = {
   content_note: string | null;
   aftercare_level: number;
   is_active: boolean;
+  talk_modes?: string[] | null;
 };
 
 const colorPresets = [
@@ -114,9 +116,10 @@ const createQuestionJsonRecord = (question: DbQuestion, category?: DbCategory) =
   content_note: question.content_note ?? "",
   aftercare_level: question.aftercare_level ?? 0,
   is_active: question.is_active,
+  talk_modes: question.talk_modes ?? ["deep"],
 });
 
-const createNewQuestionJsonTemplate = (category?: DbCategory) => ({
+const createNewQuestionJsonTemplate = (category?: DbCategory, mode: string = "deep") => ({
   id: null,
   category_id: category?.id ?? "",
   category_slug: category?.slug ?? "",
@@ -131,6 +134,7 @@ const createNewQuestionJsonTemplate = (category?: DbCategory) => ({
   content_note: "",
   aftercare_level: 0,
   is_active: true,
+  talk_modes: [mode],
 });
 
 const getQuestionItemsFromJson = (parsed: unknown) => {
@@ -147,6 +151,7 @@ const getQuestionItemsFromJson = (parsed: unknown) => {
 
 export function KhuiDeepAdmin() {
   const [activeTab, setActiveTab] = useState<"categories" | "questions">("categories");
+  const [selectedAdminMode, setSelectedAdminMode] = useState<"deep" | "interesting">("deep");
   const [categories, setCategories] = useState<DbCategory[]>([]);
   const [questions, setQuestions] = useState<DbQuestion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -164,7 +169,8 @@ export function KhuiDeepAdmin() {
     description: "",
     accent: "#ffd5bd",
     sort_order: 1,
-    is_active: true
+    is_active: true,
+    talk_modes: ["deep"] as string[]
   });
 
   // Question Form State
@@ -182,7 +188,8 @@ export function KhuiDeepAdmin() {
     default_pool: true,
     content_note: "",
     aftercare_level: 0,
-    is_active: true
+    is_active: true,
+    talk_modes: ["deep"] as string[]
   });
 
   // JSON Import State
@@ -296,6 +303,11 @@ export function KhuiDeepAdmin() {
       return;
     }
 
+    if (categoryForm.talk_modes.length === 0) {
+      showToast("กรุณาเลือกอย่างน้อยหนึ่งโหมดบทสนทนา", "error");
+      return;
+    }
+
     try {
       if (editingCategory) {
         const { error } = await supabase
@@ -306,7 +318,8 @@ export function KhuiDeepAdmin() {
             description: categoryForm.description || null,
             accent: categoryForm.accent,
             sort_order: Number(categoryForm.sort_order),
-            is_active: categoryForm.is_active
+            is_active: categoryForm.is_active,
+            talk_modes: categoryForm.talk_modes
           })
           .eq("id", editingCategory.id);
 
@@ -322,7 +335,8 @@ export function KhuiDeepAdmin() {
               description: categoryForm.description || null,
               accent: categoryForm.accent,
               sort_order: Number(categoryForm.sort_order),
-              is_active: categoryForm.is_active
+              is_active: categoryForm.is_active,
+              talk_modes: categoryForm.talk_modes
             }
           ]);
 
@@ -338,7 +352,8 @@ export function KhuiDeepAdmin() {
         description: "",
         accent: "#ffd5bd",
         sort_order: categories.length + 1,
-        is_active: true
+        is_active: true,
+        talk_modes: [selectedAdminMode]
       });
       fetchData();
     } catch (err) {
@@ -355,7 +370,8 @@ export function KhuiDeepAdmin() {
       description: cat.description || "",
       accent: cat.accent,
       sort_order: cat.sort_order,
-      is_active: cat.is_active
+      is_active: cat.is_active,
+      talk_modes: cat.talk_modes ?? ["deep"]
     });
     setShowCategoryForm(true);
     setConfirmDeleteId(null);
@@ -415,7 +431,8 @@ export function KhuiDeepAdmin() {
             default_pool: questionForm.default_pool,
             content_note: questionForm.content_note.trim() || null,
             aftercare_level: aftercareLevel,
-            is_active: questionForm.is_active
+            is_active: questionForm.is_active,
+            talk_modes: questionForm.talk_modes
           })
           .eq("id", editingQuestion.id);
 
@@ -437,7 +454,8 @@ export function KhuiDeepAdmin() {
               default_pool: questionForm.default_pool,
               content_note: questionForm.content_note.trim() || null,
               aftercare_level: aftercareLevel,
-              is_active: questionForm.is_active
+              is_active: questionForm.is_active,
+              talk_modes: questionForm.talk_modes
             }
           ]);
 
@@ -459,7 +477,8 @@ export function KhuiDeepAdmin() {
         default_pool: true,
         content_note: "",
         aftercare_level: 0,
-        is_active: true
+        is_active: true,
+        talk_modes: [selectedAdminMode]
       }));
       fetchData();
     } catch (err) {
@@ -482,7 +501,8 @@ export function KhuiDeepAdmin() {
       default_pool: q.default_pool ?? true,
       content_note: q.content_note || "",
       aftercare_level: q.aftercare_level ?? 0,
-      is_active: q.is_active
+      is_active: q.is_active,
+      talk_modes: q.talk_modes ?? ["deep"]
     });
     setShowQuestionForm(true);
     setEditingJsonQuestion(null);
@@ -575,6 +595,9 @@ export function KhuiDeepAdmin() {
       is_active: hasJsonField(parsedRecord, "is_active")
         ? parsedRecord.is_active !== false
         : fallbackQuestion?.is_active ?? true,
+      talk_modes: hasJsonField(parsedRecord, "talk_modes")
+        ? normalizeListValue(parsedRecord.talk_modes)
+        : fallbackQuestion?.talk_modes ?? [selectedAdminMode],
     };
   };
 
@@ -615,7 +638,12 @@ export function KhuiDeepAdmin() {
     const parsed = JSON.parse(input);
     const items = getQuestionItemsFromJson(parsed);
 
-    const questionById = new Map(questions.map((question) => [question.id, question]));
+    const modeQuestions = questions.filter((q) =>
+      q.talk_modes && q.talk_modes.length > 0
+        ? q.talk_modes.includes(selectedAdminMode)
+        : selectedAdminMode === "deep"
+    );
+    const questionById = new Map(modeQuestions.map((question) => [question.id, question]));
     const seenExistingIds = new Set<string>();
     const updateRows: Array<{ id: string } & ReturnType<typeof createQuestionPayloadFromJson>> = [];
     const createRows: Array<ReturnType<typeof createQuestionPayloadFromJson>> = [];
@@ -650,7 +678,7 @@ export function KhuiDeepAdmin() {
       createRows.push(createQuestionPayloadFromJson(parsedRecord, null, `${itemLabel} (คำถามใหม่)`));
     });
 
-    const deleteIds = questions
+    const deleteIds = modeQuestions
       .filter((question) => !seenExistingIds.has(question.id))
       .map((question) => question.id);
 
@@ -672,7 +700,7 @@ export function KhuiDeepAdmin() {
     }
 
     const categoryById = new Map(categories.map((category) => [category.id, category]));
-    const sortedQuestions = [...questions].sort((a, b) => {
+    const sortedQuestions = [...modeQuestions].sort((a, b) => {
       const categoryA = categoryById.get(a.category_id)?.sort_order ?? Number.MAX_SAFE_INTEGER;
       const categoryB = categoryById.get(b.category_id)?.sort_order ?? Number.MAX_SAFE_INTEGER;
 
@@ -688,12 +716,12 @@ export function KhuiDeepAdmin() {
         schema: "khui-deep-question-bulk-edit-v1",
         generated_at: new Date().toISOString(),
         total: sortedQuestions.length,
-        categories: categories.map((category) => ({
+        categories: modeCategories.map((category) => ({
           id: category.id,
           slug: category.slug,
           name: category.name,
         })),
-        new_question_template: createNewQuestionJsonTemplate(categories[0]),
+        new_question_template: createNewQuestionJsonTemplate(modeCategories[0] || categories[0], selectedAdminMode),
         questions: sortedQuestions.map((question) =>
           createQuestionJsonRecord(question, categoryById.get(question.category_id)),
         ),
@@ -715,14 +743,14 @@ export function KhuiDeepAdmin() {
         ? JSON.parse(bulkJsonEditInput)
         : {
             schema: "khui-deep-question-bulk-edit-v1",
-            categories: categories.map((category) => ({
+            categories: modeCategories.map((category) => ({
               id: category.id,
               slug: category.slug,
               name: category.name,
             })),
             questions: [],
           };
-      const template = createNewQuestionJsonTemplate(categories[0]);
+      const template = createNewQuestionJsonTemplate(categories[0], selectedAdminMode);
 
       if (Array.isArray(parsed)) {
         parsed.push(template);
@@ -836,6 +864,7 @@ export function KhuiDeepAdmin() {
         content_note?: string;
         aftercare_level?: number;
         is_active?: boolean;
+        talk_modes?: string | string[];
       }
 
       const parsed = JSON.parse(jsonInput);
@@ -868,7 +897,8 @@ export function KhuiDeepAdmin() {
           default_pool: item.default_pool !== false,
           content_note: item.content_note ? String(item.content_note).trim() : null,
           aftercare_level: clampAftercareLevel(item.aftercare_level),
-          is_active: item.is_active !== false
+          is_active: item.is_active !== false,
+          talk_modes: normalizeListValue(item.talk_modes) ?? [selectedAdminMode]
         };
       });
 
@@ -897,8 +927,8 @@ export function KhuiDeepAdmin() {
 
     const exportQuestions =
       categoryFilter === "all"
-        ? questions
-        : questions.filter((question) => question.category_id === categoryFilter);
+        ? modeQuestions
+        : modeQuestions.filter((question) => question.category_id === categoryFilter);
     const exportCategoryIds = new Set(exportQuestions.map((question) => question.category_id));
     const exportCategories =
       categoryFilter === "all"
@@ -929,21 +959,28 @@ export function KhuiDeepAdmin() {
       filter: {
         category_id: categoryFilter,
         category_slug: categoryFilter === "all" ? "all" : categoryById.get(categoryFilter)?.slug ?? null,
-        category_name: categoryFilter === "all" ? "ทุกหมวดหมู่" : categoryById.get(categoryFilter)?.name ?? null,
+        category_name: (() => {
+          if (categoryFilter === "all") return "ทุกหมวดหมู่";
+          const cat = categoryById.get(categoryFilter);
+          if (!cat) return null;
+          return cat.name;
+        })(),
       },
       totals: {
         categories: sortedCategories.length,
         questions: sortedQuestions.length,
       },
-      categories: sortedCategories.map((category) => ({
-        id: category.id,
-        slug: category.slug,
-        name: category.name,
-        description: category.description,
-        accent: category.accent,
-        sort_order: category.sort_order,
-        is_active: category.is_active,
-      })),
+      categories: sortedCategories.map((category) => {
+        return {
+          id: category.id,
+          slug: category.slug,
+          name: category.name,
+          description: category.description || "",
+          accent: category.accent,
+          sort_order: category.sort_order,
+          is_active: category.is_active,
+        };
+      }),
       questions: sortedQuestions.map((question) => {
         const category = categoryById.get(question.category_id);
 
@@ -963,6 +1000,7 @@ export function KhuiDeepAdmin() {
           content_note: question.content_note,
           aftercare_level: question.aftercare_level ?? 0,
           is_active: question.is_active,
+          talk_modes: question.talk_modes ?? ["deep"]
         };
       }),
     };
@@ -985,9 +1023,17 @@ export function KhuiDeepAdmin() {
     showToast(`ส่งออก JSON สำเร็จแล้ว (${sortedQuestions.length} คำถาม)`, "success");
   };
 
+  const modeQuestions = useMemo(() => {
+    return questions.filter((q) =>
+      q.talk_modes && q.talk_modes.length > 0
+        ? q.talk_modes.includes(selectedAdminMode)
+        : selectedAdminMode === "deep"
+    );
+  }, [questions, selectedAdminMode]);
+
   // Filtered Questions list
   const filteredQuestions = useMemo(() => {
-    return questions.filter((q) => {
+    return modeQuestions.filter((q) => {
       const matchesSearch =
         q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (q.helper_text && q.helper_text.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -1000,7 +1046,15 @@ export function KhuiDeepAdmin() {
 
       return matchesSearch && matchesCategory;
     });
-  }, [questions, searchQuery, categoryFilter]);
+  }, [modeQuestions, searchQuery, categoryFilter]);
+
+  const modeCategories = useMemo(() => {
+    return categories.filter((cat) =>
+      cat.talk_modes && cat.talk_modes.length > 0
+        ? cat.talk_modes.includes(selectedAdminMode)
+        : selectedAdminMode === "deep"
+    );
+  }, [categories, selectedAdminMode]);
 
   // Map category ID to Category Name
   const categoryMap = useMemo(() => {
@@ -1154,6 +1208,43 @@ export function KhuiDeepAdmin() {
           </div>
         </motion.nav>
 
+        {/* Mode Switcher */}
+        <motion.div
+          variants={itemVariants}
+          className="mb-6 sketchy-panel bg-white/70 p-4 border-2 border-ink-800 flex flex-col md:flex-row items-center justify-between gap-4"
+        >
+          <div className="flex flex-col gap-1">
+            <span className="font-hand text-xl font-bold text-ink-900">กำลังเลือกจัดการข้อมูลสำหรับ:</span>
+            <span className="text-sm text-ink-500 font-semibold">การเพิ่ม/แก้ไข/ส่งออก/แก้รวม JSON จะส่งผลเฉพาะโหมดที่เลือกโดยตรง</span>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
+                setSelectedAdminMode("deep");
+                setConfirmDeleteId(null);
+              }}
+              className={`btn-doodle flex items-center gap-2 rounded-note border-2 border-ink-800 px-6 py-2.5 font-hand text-xl font-bold shadow-sketch ${
+                selectedAdminMode === "deep" ? "bg-doodle-lemon scale-105" : "bg-white text-ink-600"
+              }`}
+              style={{ "--btn-hover-rotate": "-1deg" } as React.CSSProperties}
+            >
+              <span>โหมดอบอุ่นใจ (Deep Talk)</span>
+            </button>
+            <button
+              onClick={() => {
+                setSelectedAdminMode("interesting");
+                setConfirmDeleteId(null);
+              }}
+              className={`btn-doodle flex items-center gap-2 rounded-note border-2 border-ink-800 px-6 py-2.5 font-hand text-xl font-bold shadow-sketch ${
+                selectedAdminMode === "interesting" ? "bg-[#ffd1f3] scale-105" : "bg-white text-ink-600"
+              }`}
+              style={{ "--btn-hover-rotate": "1deg" } as React.CSSProperties}
+            >
+              <span>โหมดคุยเปิดโลก (Interesting Talk)</span>
+            </button>
+          </div>
+        </motion.div>
+
         {/* Tab Selection */}
         <motion.div variants={itemVariants} className="mb-6 flex flex-col sm:flex-row gap-4 border-b border-dashed border-ink-800/20 pb-4">
           <button
@@ -1180,7 +1271,7 @@ export function KhuiDeepAdmin() {
             style={{ "--btn-hover-rotate": "1deg" } as React.CSSProperties}
           >
             <HelpCircle className="h-5 w-5" />
-            <span>คำถามทั้งหมด ({questions.length})</span>
+            <span>คำถามทั้งหมด ({modeQuestions.length})</span>
           </button>
         </motion.div>
 
@@ -1222,7 +1313,8 @@ export function KhuiDeepAdmin() {
                         description: "",
                         accent: "#ffd5bd",
                         sort_order: categories.length + 1,
-                        is_active: true
+                        is_active: true,
+                        talk_modes: [selectedAdminMode]
                       });
                       setShowCategoryForm(true);
                       setConfirmDeleteId(null);
@@ -1347,6 +1439,41 @@ export function KhuiDeepAdmin() {
                           </div>
                         </div>
 
+                        {/* Talk modes checkboxes */}
+                        <div className="flex flex-col gap-1.5 pt-2 border-t border-dashed border-ink-800/20">
+                          <label className="block font-hand text-lg font-bold text-ink-800">แสดงผลในโหมดบทสนทนา (Talk Modes)</label>
+                          <div className="flex flex-wrap gap-4">
+                            <label className="flex items-center gap-2 font-hand text-lg text-ink-900 cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={categoryForm.talk_modes.includes("deep")}
+                                onChange={(e) => {
+                                  const nextModes = e.target.checked
+                                    ? [...categoryForm.talk_modes, "deep"]
+                                    : categoryForm.talk_modes.filter((m) => m !== "deep");
+                                  setCategoryForm({ ...categoryForm, talk_modes: nextModes });
+                                }}
+                                className="h-5 w-5 rounded border-2 border-ink-800 text-ink-900 focus:ring-0"
+                              />
+                              โหมดอบอุ่นใจ (Deep Talk)
+                            </label>
+                            <label className="flex items-center gap-2 font-hand text-lg text-ink-900 cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={categoryForm.talk_modes.includes("interesting")}
+                                onChange={(e) => {
+                                  const nextModes = e.target.checked
+                                    ? [...categoryForm.talk_modes, "interesting"]
+                                    : categoryForm.talk_modes.filter((m) => m !== "interesting");
+                                  setCategoryForm({ ...categoryForm, talk_modes: nextModes });
+                                }}
+                                className="h-5 w-5 rounded border-2 border-ink-800 text-ink-900 focus:ring-0"
+                              />
+                              โหมดคุยเปิดโลก (Interesting Talk)
+                            </label>
+                          </div>
+                        </div>
+
                         {/* Toggle active state */}
                         <div className="flex items-center gap-2 pt-2">
                           <input
@@ -1387,73 +1514,88 @@ export function KhuiDeepAdmin() {
 
                 {/* Categories Cards List */}
                 <div className="grid gap-6 sm:grid-cols-2">
-                  {categories.map((cat) => (
-                    <motion.div
-                      key={cat.id}
-                      variants={itemVariants}
-                      className="sketchy-panel bg-white p-5 flex flex-col justify-between"
-                      style={{ borderLeftWidth: "8px", borderLeftColor: cat.accent }}
-                    >
-                      <div>
-                        <div className="flex justify-between items-start gap-2">
-                          <h3 className="font-hand text-2xl font-bold text-ink-900">{cat.name}</h3>
-                          <span className="rounded-full border-2 border-ink-800 bg-white px-2 py-0.5 font-hand text-xs font-bold shadow-sketch-soft">
-                            ลำดับ: {cat.sort_order}
-                          </span>
+                  {modeCategories.map((cat) => {
+                    const displayCategory = {
+                      name: cat.name,
+                      description: cat.description || "",
+                      accent: cat.accent,
+                    };
+
+                    return (
+                      <motion.div
+                        key={cat.id}
+                        variants={itemVariants}
+                        className="sketchy-panel bg-white p-5 flex flex-col justify-between"
+                        style={{ borderLeftWidth: "8px", borderLeftColor: displayCategory.accent }}
+                      >
+                        <div>
+                          <div className="flex justify-between items-start gap-2">
+                            <h3 className="font-hand text-2xl font-bold text-ink-900">{displayCategory.name}</h3>
+                            <div className="flex flex-col items-end gap-1.5">
+                              <span className="rounded-full border-2 border-ink-800 bg-white px-2 py-0.5 font-hand text-xs font-bold shadow-sketch-soft">
+                                ลำดับ: {cat.sort_order}
+                              </span>
+                              <span className="rounded bg-paper-100 px-2 py-0.5 text-xs font-bold text-ink-700">
+                                คำถามในโหมดนี้: {
+                                  modeQuestions.filter((q) => q.category_id === cat.id).length
+                                } ใบ
+                              </span>
+                            </div>
+                          </div>
+                          <p className="font-hand text-sm text-ink-500 mb-2">slug: {cat.slug}</p>
+                          <p className="text-sm text-ink-700 leading-relaxed mb-4">
+                            {displayCategory.description || <span className="italic text-ink-400">ไม่มีคำอธิบาย</span>}
+                          </p>
                         </div>
-                        <p className="font-hand text-sm text-ink-500 mb-2">slug: {cat.slug}</p>
-                        <p className="text-sm text-ink-700 leading-relaxed mb-4">
-                          {cat.description || <span className="italic text-ink-400">ไม่มีคำอธิบาย</span>}
-                        </p>
-                      </div>
 
-                      <div className="border-t border-dashed border-ink-800/10 pt-3 flex items-center justify-between">
-                        <div className="flex items-center gap-1 text-sm font-semibold">
-                          {cat.is_active ? (
-                            <span className="flex items-center gap-1 text-green-600 bg-green-50 px-2 py-1 rounded">
-                              <Eye className="h-4 w-4" /> เปิดใช้งานอยู่
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-1 text-red-500 bg-red-50 px-2 py-1 rounded">
-                              <EyeOff className="h-4 w-4" /> ปิดใช้งาน
-                            </span>
-                          )}
-                        </div>
+                        <div className="border-t border-dashed border-ink-800/10 pt-3 flex items-center justify-between">
+                          <div className="flex items-center gap-1 text-sm font-semibold">
+                            {cat.is_active ? (
+                              <span className="flex items-center gap-1 text-green-600 bg-green-50 px-2 py-1 rounded">
+                                <Eye className="h-4 w-4" /> เปิดใช้งานอยู่
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1 text-red-500 bg-red-50 px-2 py-1 rounded">
+                                <EyeOff className="h-4 w-4" /> ปิดใช้งาน
+                              </span>
+                            )}
+                          </div>
 
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleEditCategory(cat)}
-                            className="btn-doodle p-2 rounded-note border-2 border-ink-800 bg-white hover:bg-doodle-lemon"
-                            title="แก้ไขหมวดหมู่"
-                          >
-                            <Edit3 className="h-4.5 w-4.5" />
-                          </button>
-
-                          {confirmDeleteId === cat.id ? (
+                          <div className="flex gap-2">
                             <button
-                              onClick={() => handleDeleteCategory(cat.id)}
-                              className="btn-doodle px-2.5 py-1 text-xs rounded-note border-2 border-red-500 bg-red-100 text-red-600 font-bold"
-                              title="ยืนยันการลบ"
+                              onClick={() => handleEditCategory(cat)}
+                              className="btn-doodle p-2 rounded-note border-2 border-ink-800 bg-white hover:bg-doodle-lemon"
+                              title="แก้ไขหมวดหมู่"
                             >
-                              แน่ใจนะ? ลบเลย
+                              <Edit3 className="h-4.5 w-4.5" />
                             </button>
-                          ) : (
-                            <button
-                              onClick={() => {
-                                setConfirmDeleteId(cat.id);
-                                // Auto clear after 4 seconds
-                                setTimeout(() => setConfirmDeleteId((prev) => (prev === cat.id ? null : prev)), 4000);
-                              }}
-                              className="btn-doodle p-2 rounded-note border-2 border-ink-800 bg-white hover:bg-red-50 text-red-500"
-                              title="ลบหมวดหมู่"
-                            >
-                              <Trash2 className="h-4.5 w-4.5" />
-                            </button>
-                          )}
+
+                            {confirmDeleteId === cat.id ? (
+                              <button
+                                onClick={() => handleDeleteCategory(cat.id)}
+                                className="btn-doodle px-2.5 py-1 text-xs rounded-note border-2 border-red-500 bg-red-100 text-red-600 font-bold"
+                                title="ยืนยันการลบ"
+                              >
+                                แน่ใจนะ? ลบเลย
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setConfirmDeleteId(cat.id);
+                                  // Auto clear after 4 seconds
+                                  setTimeout(() => setConfirmDeleteId((prev) => (prev === cat.id ? null : prev)), 4000);
+                                }}
+                                className="btn-doodle p-2 rounded-note border-2 border-ink-800 bg-white hover:bg-red-50 text-red-500"
+                                title="ลบหมวดหมู่"
+                              >
+                                <Trash2 className="h-4.5 w-4.5" />
+                              </button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    );
+                  })}
                 </div>
               </motion.div>
             )}
@@ -1518,7 +1660,8 @@ export function KhuiDeepAdmin() {
                           default_pool: true,
                           content_note: "",
                           aftercare_level: 0,
-                          is_active: true
+                          is_active: true,
+                          talk_modes: [selectedAdminMode]
                         });
                         setShowQuestionForm(true);
                         setShowJsonImport(false);
@@ -1557,12 +1700,14 @@ export function KhuiDeepAdmin() {
                       onChange={(e) => setCategoryFilter(e.target.value)}
                       className="w-full rounded-note border-2 border-ink-800 bg-white px-3 py-2.5 font-hand text-lg focus:outline-none"
                     >
-                      <option value="all">แสดงผลคำถามจากทุกหมวดหมู่ ({questions.length})</option>
-                      {categories.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          หมวดหมู่: {c.name} ({questions.filter((q) => q.category_id === c.id).length} ใบ)
-                        </option>
-                      ))}
+                      <option value="all">แสดงผลคำถามจากทุกหมวดหมู่ ({modeQuestions.length})</option>
+                      {modeCategories.map((c) => {
+                        return (
+                          <option key={c.id} value={c.id}>
+                            หมวดหมู่: {c.name} ({modeQuestions.filter((q) => q.category_id === c.id).length} ใบ)
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
                 </div>
@@ -1635,6 +1780,16 @@ export function KhuiDeepAdmin() {
                             ✕ ยกเลิก
                           </button>
                         </div>
+                      </div>
+
+                      <div className="sketchy-panel bg-doodle-sky/15 p-4 mb-4 border-2 border-ink-800 rounded-note text-left">
+                        <h4 className="font-hand text-xl font-bold text-ink-900 mb-2">💡 วิธีแก้รวม JSON แบบเข้าใจง่าย (ระบบดึง ID มาให้แล้ว!):</h4>
+                        <ul className="list-decimal list-inside space-y-1.5 font-hand text-lg text-ink-850">
+                          <li><strong>คุณไม่ต้องหาหรือพิมพ์ ID เอง:</strong> เมื่อเปิดหน้านี้ ระบบจะดึงข้อความคำถามทั้งหมดพร้อม ID จากฐานข้อมูลมาใส่ในกล่องข้อความด้านล่างให้ทันที</li>
+                          <li><strong>การแก้ไขข้อความ:</strong> แก้ไขข้อความคำถามหรือค่าอื่น ๆ ได้ตามสบาย โดยขอให้คงคีย์ <code className="bg-white px-1 border border-ink-800/10 rounded font-mono text-sm font-bold text-ink-900">&quot;id&quot;</code> ของเดิมไว้</li>
+                          <li><strong>การเพิ่มคำถามใหม่:</strong> กดปุ่ม <span className="bg-doodle-sky/80 px-2 py-0.5 rounded text-sm text-ink-900 font-bold border border-ink-800/35">💡 เพิ่ม template</span> ด้านบน แล้วแก้ไขคำถามใหม่ได้เลย (ระบบจะใส่ <code className="bg-white px-1 border border-ink-800/10 rounded font-mono text-sm font-bold">&quot;id&quot;: null</code> ไว้ให้)</li>
+                          <li><strong>การลบคำถาม:</strong> หากลบลบข้อมูลคำถามกล่องใดกล่องหนึ่งออกไปจากรายการนี้ คำถามตัวนั้นจะถูกลบออกจากฐานข้อมูลทันทีเมื่อคุณกดบันทึก</li>
+                        </ul>
                       </div>
 
                       <form onSubmit={handleSaveBulkQuestionJson} className="space-y-4">
@@ -1785,6 +1940,15 @@ export function KhuiDeepAdmin() {
                         </button>
                       </div>
 
+                      <div className="sketchy-panel bg-doodle-mint/15 p-4 mb-4 border-2 border-ink-800 rounded-note text-left">
+                        <h4 className="font-hand text-xl font-bold text-ink-900 mb-2">🚀 นำเข้าคำถามใหม่แบบเป็นชุด (คุณไม่ต้องใส่ ID!):</h4>
+                        <ul className="list-decimal list-inside space-y-1.5 font-hand text-lg text-ink-850">
+                          <li><strong>ไม่ต้องใช้ ID ใด ๆ:</strong> หน้านี้ใช้สำหรับ <strong>เพิ่มการ์ดใหม่เท่านั้น</strong> คุณห้ามใส่ฟิลด์ ID หรือค่า ID เข้ามา!</li>
+                          <li><strong>วิธีใช้:</strong> กดปุ่ม <span className="underline font-bold text-ink-700/80">💡 ใส่โครงสร้างตัวอย่าง</span> ด้านขวาล่างเพื่อคัดลอกโครงร่าง จากนั้นพิมพ์เปลี่ยนคำถามตามต้องการ</li>
+                          <li><strong>เลือกหมวดหมู่ปลายทาง:</strong> เลือกหมวดหมู่ปลายทางด้านล่าง เพื่อนำคำถามทั้งหมดในชุดไปบันทึกใส่หมวดหมู่นั้นทันที</li>
+                        </ul>
+                      </div>
+
                       <form onSubmit={handleImportJson} className="space-y-4">
                         <div>
                           <label className="block font-hand text-lg font-bold text-ink-800 mb-1">หมวดหมู่ปลายทางสำหรับคำถามนำเข้า</label>
@@ -1794,11 +1958,13 @@ export function KhuiDeepAdmin() {
                             onChange={(e) => setJsonImportCategory(e.target.value)}
                             className="w-full rounded-note border-2 border-ink-800 bg-paper-50 px-3 py-2 font-hand text-base focus:outline-none"
                           >
-                            {categories.map((c) => (
-                              <option key={c.id} value={c.id}>
-                                {c.name}
-                              </option>
-                            ))}
+                            {modeCategories.map((c) => {
+                              return (
+                                <option key={c.id} value={c.id}>
+                                  {c.name}
+                                </option>
+                              );
+                            })}
                           </select>
                         </div>
 
@@ -1821,7 +1987,8 @@ export function KhuiDeepAdmin() {
                                       "default_pool": true,
                                       "content_note": "",
                                       "aftercare_level": 0,
-                                      "is_active": true
+                                      "is_active": true,
+                                      "talk_modes": ["deep"]
                                     },
                                     {
                                       "question": "ความกลัวที่ยิ่งใหญ่ที่สุดของคุณในตอนนี้คืออะไร?",
@@ -1833,7 +2000,8 @@ export function KhuiDeepAdmin() {
                                       "requires_consent": true,
                                       "default_pool": false,
                                       "content_note": "คำถามนี้อาจแตะเรื่องความสูญเสียหรือความสัมพันธ์เก่า",
-                                      "aftercare_level": 2
+                                      "aftercare_level": 2,
+                                      "talk_modes": ["deep", "interesting"]
                                     }
                                   ], null, 2));
                                 }}
@@ -1867,7 +2035,8 @@ export function KhuiDeepAdmin() {
     "requires_consent": false,
     "default_pool": true,
     "content_note": "",
-    "aftercare_level": 0
+    "aftercare_level": 0,
+    "talk_modes": ["deep"]
   }
 ]'
                             rows={16}
@@ -1944,11 +2113,13 @@ export function KhuiDeepAdmin() {
                               onChange={(e) => setQuestionForm({ ...questionForm, category_id: e.target.value })}
                               className="w-full rounded-note border-2 border-ink-800 bg-paper-50 px-3 py-2 font-hand text-base focus:outline-none"
                             >
-                              {categories.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                  {c.name}
-                                </option>
-                              ))}
+                              {modeCategories.map((c) => {
+                                return (
+                                  <option key={c.id} value={c.id}>
+                                    {c.name}
+                                  </option>
+                                );
+                              })}
                             </select>
                           </div>
 
@@ -2064,6 +2235,40 @@ export function KhuiDeepAdmin() {
                                   className="h-5 w-5 rounded border-2 border-ink-800 text-ink-900 focus:ring-0"
                                 />
                                 อยู่ใน default pool
+                              </label>
+                            </div>
+                          </div>
+
+                          <div className="mt-4">
+                            <label className="block font-hand text-lg font-bold text-ink-800 mb-1">โหมดการเล่นที่เข้าร่วม</label>
+                            <div className="flex flex-wrap gap-4 mt-1">
+                              <label className="flex items-center gap-2 font-hand text-base font-bold text-ink-900 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={questionForm.talk_modes.includes("deep")}
+                                  onChange={(e) => {
+                                    const nextModes = e.target.checked
+                                      ? [...questionForm.talk_modes, "deep"]
+                                      : questionForm.talk_modes.filter((m) => m !== "deep");
+                                    setQuestionForm({ ...questionForm, talk_modes: nextModes });
+                                  }}
+                                  className="h-5 w-5 rounded border-2 border-ink-800 text-ink-900 focus:ring-0"
+                                />
+                                โหมดอบอุ่นใจ (Deep Talk)
+                              </label>
+                              <label className="flex items-center gap-2 font-hand text-base font-bold text-ink-900 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={questionForm.talk_modes.includes("interesting")}
+                                  onChange={(e) => {
+                                    const nextModes = e.target.checked
+                                      ? [...questionForm.talk_modes, "interesting"]
+                                      : questionForm.talk_modes.filter((m) => m !== "interesting");
+                                    setQuestionForm({ ...questionForm, talk_modes: nextModes });
+                                  }}
+                                  className="h-5 w-5 rounded border-2 border-ink-800 text-ink-900 focus:ring-0"
+                                />
+                                โหมดคุยเปิดโลก (Interesting Talk)
                               </label>
                             </div>
                           </div>

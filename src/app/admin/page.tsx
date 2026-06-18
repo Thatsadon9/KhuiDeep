@@ -1,4 +1,4 @@
-import { KhuiDeepAdmin } from "@/components/khui-deep-admin";
+import { KhuiDeepAdmin } from "@/components/admin/khui-deep-admin";
 
 export const metadata = {
   title: "ผู้ดูแลระบบ - KhuiDeep คุยดีพ",

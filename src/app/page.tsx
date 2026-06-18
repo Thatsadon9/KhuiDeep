@@ -1,4 +1,4 @@
-import { CategorySelection } from "@/components/category-selection";
+import { CategorySelection } from "@/components/play/category-selection";
 import { getQuestionDeck } from "@/lib/questions";
 
 export const revalidate = 300;

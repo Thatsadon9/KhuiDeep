@@ -16,11 +16,17 @@ import {
   Sparkles,
   Lightbulb,
   Users,
+  Orbit,
+  Zap,
 } from "lucide-react";
-import { FlippingCard } from "@/components/flipping-card";
+import { FlippingCard } from "@/components/play/flipping-card";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { AmbientControl } from "@/components/ambient-control";
+import { AmbientControl } from "@/components/play/ambient-control";
 import { useSoundEngine } from "@/components/sound-provider";
+import {
+  filterQuestionsByTalkMode,
+  parseTalkModeId,
+} from "@/lib/talk-modes";
 import { getSupabaseClient } from "@/lib/supabase";
 import type { DeepQuestion, QuestionCategory, QuestionDeck } from "@/types";
 
@@ -36,6 +42,7 @@ const allCategory: QuestionCategory = {
   description: "รวมคำถามจากทุกหมวดหมู่ไว้ในกองเดียวสำหรับทุกความสัมพันธ์",
   accent: "#ffd5bd",
   sortOrder: 0,
+  talkModes: ["deep", "interesting"],
 };
 
 function pickRandomQuestion(pool: DeepQuestion[], currentId?: string) {
@@ -98,6 +105,69 @@ function parseDepthFilter(value: string | null) {
   return roundedValue;
 }
 
+function UfoStickerIcon() {
+  return (
+    <svg
+      viewBox="0 0 84 58"
+      className="h-full w-full"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path
+        d="M28 29c4.2-11 23.5-11.4 28 0"
+        fill="#d8b4fe"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="3.5"
+      />
+      <path
+        d="M10 31c11-7.5 52-7.5 64 0-4.2 10.5-59.2 10.4-64 0Z"
+        fill="#a7f3d0"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="3.5"
+      />
+      <path
+        d="M24 38c7 8 29 8 36 0"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="3"
+      />
+      <path
+        d="M26 46l-7 8M42 47l-1 9M58 46l7 8"
+        stroke="#7dd3fc"
+        strokeLinecap="round"
+        strokeWidth="3"
+      />
+      <circle cx="27" cy="32" r="2.5" fill="#2f2925" />
+      <circle cx="42" cy="34" r="2.5" fill="#2f2925" />
+      <circle cx="57" cy="32" r="2.5" fill="#2f2925" />
+    </svg>
+  );
+}
+
+function PixelQuestionIcon() {
+  return (
+    <svg
+      viewBox="0 0 52 52"
+      className="h-full w-full"
+      aria-hidden="true"
+      focusable="false"
+      shapeRendering="crispEdges"
+    >
+      <path
+        d="M14 8h24v6h6v14h-6v6H28v6H18V28h12v-4h4V18H18v6H8V14h6V8Zm4 34h10v8H18v-8Z"
+        fill="#c4b5fd"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="3"
+      />
+    </svg>
+  );
+}
+
 
 export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
   const { playDraw, playFlip, playClick } = useSoundEngine();
@@ -105,6 +175,12 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
   const router = useRouter();
   const pathname = usePathname();
   const roomId = searchParams ? searchParams.get("room") : null;
+
+  const selectedTalkMode = useMemo(
+    () => parseTalkModeId(searchParams ? searchParams.get("mode") : null),
+    [searchParams],
+  );
+  const isInterestingMode = selectedTalkMode === "interesting";
 
   const selectedDepth = useMemo(
     () => parseDepthFilter(searchParams ? searchParams.get("depth") : null),
@@ -126,6 +202,30 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
     return deck.categories.find((cat) => cat.slug === categorySlug) ?? allCategory;
   }, [deck.categories, categorySlug]);
 
+
+
+  const displayCategory = useMemo(() => {
+    if (currentCategory.slug === "all") {
+      if (selectedTalkMode === "interesting") {
+        return {
+          ...currentCategory,
+          name: "จักรวาลคำถามทั้งหมด",
+          description: "รวมกองคำถามสายจินตนาการ ไว้สุ่มเปิดประตูไปทุกความเป็นไปได้",
+          accent: "#ffd1f3",
+        };
+      } else {
+        return {
+          ...currentCategory,
+          name: "ทั้งหมด",
+          description: "รวมคำถามจากทุกหมวดหมู่ไว้ในกองเดียวสำหรับทุกความสัมพันธ์",
+          accent: "#ffd5bd",
+        };
+      }
+    }
+
+    return currentCategory;
+  }, [currentCategory, selectedTalkMode]);
+
   const baseQuestionPool = useMemo(() => {
     if (categorySlug === "all") {
       return deck.questions;
@@ -133,15 +233,20 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
     return deck.questions.filter((question) => question.categorySlug === categorySlug);
   }, [deck.questions, categorySlug]);
 
+  const modeQuestionPool = useMemo(
+    () => filterQuestionsByTalkMode(baseQuestionPool, selectedTalkMode),
+    [baseQuestionPool, selectedTalkMode],
+  );
+
   // Filter questions for the selected category and setup choices from the landing modal.
   const questionPool = useMemo(() => {
-    return baseQuestionPool.filter((question) => {
+    return modeQuestionPool.filter((question) => {
       const matchesDepth = selectedDepth ? question.level <= selectedDepth : true;
       const matchesAudience = selectedAudience ? question.audience.includes(selectedAudience) : true;
 
       return matchesDepth && matchesAudience;
     });
-  }, [baseQuestionPool, selectedAudience, selectedDepth]);
+  }, [modeQuestionPool, selectedAudience, selectedDepth]);
 
   const selectedDepthLabel = selectedDepth ? depthLabels[selectedDepth] ?? `ระดับ ${selectedDepth}` : null;
   const selectedAudienceLabel = selectedAudience ? audienceLabels[selectedAudience] : null;
@@ -626,40 +731,80 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
 
   // Accent gradient based on the selected category's accent color
   const dynamicBackgroundStyle = useMemo(() => {
+    if (isInterestingMode) {
+      return {
+        background: `
+          radial-gradient(circle at 10% 10%, rgba(125, 211, 252, 0.34), transparent 26rem),
+          radial-gradient(circle at 88% 12%, rgba(255, 209, 243, 0.48), transparent 24rem),
+          radial-gradient(circle at 72% 88%, rgba(190, 242, 100, 0.22), transparent 22rem),
+          linear-gradient(90deg, rgba(47, 41, 37, 0.035) 1px, transparent 1px),
+          linear-gradient(rgba(47, 41, 37, 0.035) 1px, transparent 1px),
+          var(--paper)
+        `,
+        backgroundSize: "auto, auto, auto, 30px 30px, 30px 30px, auto",
+        "--category-glow": displayCategory.accent,
+        "--category-glow-soft": `${displayCategory.accent}66`,
+        "--category-glow-alpha": `${displayCategory.accent}26`,
+        "--bg-glow-1": "rgba(125, 211, 252, 0.26)",
+        "--bg-glow-2": "rgba(255, 209, 243, 0.24)",
+        "--btn-glow": displayCategory.accent,
+      } as React.CSSProperties;
+    }
+
     return {
       background: `
-        radial-gradient(circle at top left, ${currentCategory.accent}4d, transparent 36rem),
-        radial-gradient(circle at 85% 15%, ${currentCategory.accent}33, transparent 28rem),
+        radial-gradient(circle at top left, ${displayCategory.accent}4d, transparent 36rem),
+        radial-gradient(circle at 85% 15%, ${displayCategory.accent}33, transparent 28rem),
         linear-gradient(90deg, rgba(47, 41, 37, 0.035) 1px, transparent 1px),
         linear-gradient(rgba(47, 41, 37, 0.035) 1px, transparent 1px),
         var(--paper)
       `,
       backgroundSize: "auto, auto, 32px 32px, 32px 32px, auto",
-      "--category-glow": currentCategory.accent,
-      "--category-glow-soft": `${currentCategory.accent}66`,
-      "--category-glow-alpha": `${currentCategory.accent}26`,
-      "--bg-glow-1": `${currentCategory.accent}24`,
-      "--bg-glow-2": `${currentCategory.accent}18`,
-      "--btn-glow": currentCategory.accent,
+      "--category-glow": displayCategory.accent,
+      "--category-glow-soft": `${displayCategory.accent}66`,
+      "--category-glow-alpha": `${displayCategory.accent}26`,
+      "--bg-glow-1": `${displayCategory.accent}24`,
+      "--bg-glow-2": `${displayCategory.accent}18`,
+      "--btn-glow": displayCategory.accent,
     } as React.CSSProperties;
-  }, [currentCategory.accent]);
+  }, [displayCategory.accent, isInterestingMode]);
 
   return (
     <main
-      className="relative min-h-screen overflow-hidden px-4 py-6 text-ink-900 sm:px-6 lg:px-8 transition-colors duration-500"
+      className={clsx(
+        "relative min-h-screen overflow-hidden px-4 py-6 text-ink-900 sm:px-6 lg:px-8 transition-colors duration-500",
+        isInterestingMode && "interesting-play-mode",
+      )}
       style={dynamicBackgroundStyle}
     >
       {/* Decorative background illustrations */}
-      <Image
-        src="/sketch-notes.svg"
-        alt=""
-        width={360}
-        height={260}
-        aria-hidden="true"
-        className="pointer-events-none absolute right-3 top-3 hidden w-56 rotate-2 opacity-80 sm:block lg:right-12 lg:top-8"
-      />
+      {isInterestingMode ? (
+        <div className="cyber-sticker-cluster interesting-play-stickers" aria-hidden="true">
+          <span className="cyber-sticker cyber-sticker-ufo">
+            <UfoStickerIcon />
+          </span>
+          <span className="cyber-sticker cyber-sticker-zap">
+            <Zap className="h-7 w-7" />
+          </span>
+          <span className="cyber-sticker cyber-sticker-pixel">
+            <PixelQuestionIcon />
+          </span>
+          <span className="interesting-play-orbit-sticker">
+            <Orbit className="h-8 w-8" />
+          </span>
+        </div>
+      ) : (
+        <Image
+          src="/sketch-notes.svg"
+          alt=""
+          width={360}
+          height={260}
+          aria-hidden="true"
+          className="pointer-events-none absolute right-3 top-3 hidden w-56 rotate-2 opacity-80 sm:block lg:right-12 lg:top-8"
+        />
+      )}
 
-      <div className="relative mx-auto max-w-5xl">
+      <div className="relative mx-auto max-w-5xl interesting-play-content">
         {/* Navigation Bar */}
         <nav className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-3">
@@ -675,21 +820,29 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
           </div>
 
           <div
-            className="inline-flex rotate-[0.5deg] items-center gap-2 rounded-full border-2 border-ink-800 px-4 py-2 font-hand text-lg font-bold shadow-sketch-soft"
-            style={{ backgroundColor: currentCategory.accent }}
+            className={clsx(
+              "inline-flex rotate-[0.5deg] items-center gap-2 rounded-full border-2 border-ink-800 px-4 py-2 font-hand text-lg font-bold shadow-sketch-soft",
+              isInterestingMode && "interesting-play-mode-pill",
+            )}
+            style={{ backgroundColor: displayCategory.accent }}
           >
             <Sparkles className="h-5 w-5 animate-pulse text-ink-900" />
-            <span>หมวดหมู่: {currentCategory.name}</span>
+            <span>หมวดหมู่: {displayCategory.name}</span>
           </div>
         </nav>
 
         {/* Playroom Title & Summary */}
-        <header className="mb-6 rounded-note border-2 border-dashed border-ink-800/40 bg-paper-50/60 p-5">
+        <header
+          className={clsx(
+            "mb-6 rounded-note border-2 border-dashed border-ink-800/40 bg-paper-50/60 p-5",
+            isInterestingMode && "interesting-play-hero",
+          )}
+        >
           <h1 className="font-hand text-3xl font-bold text-ink-900 sm:text-4xl">
-            กำลังสุ่มการ์ด: {currentCategory.name}
+            กำลังสุ่มการ์ด: {displayCategory.name}
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-ink-700">
-            {currentCategory.description}
+            {displayCategory.description}
           </p>
           {(selectedDepthLabel || selectedAudienceLabel) && (
             <div className="mt-4 flex flex-wrap gap-2">
@@ -711,11 +864,17 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
               {/* Stack Background Cards (Visual Decoration) */}
               <motion.div 
                 style={bgCard1Style} 
-                className="absolute inset-0 border-2 border-ink-800 rounded-[31px_25px_34px_23px] bg-paper-50/70 shadow-sketch-soft pointer-events-none z-0" 
+                className={clsx(
+                  "absolute inset-0 border-2 border-ink-800 rounded-[31px_25px_34px_23px] bg-paper-50/70 shadow-sketch-soft pointer-events-none z-0",
+                  isInterestingMode && "interesting-play-stack-card",
+                )}
               />
               <motion.div 
                 style={bgCard2Style} 
-                className="absolute inset-0 border-2 border-ink-800 rounded-[31px_25px_34px_23px] bg-paper-50/40 shadow-sketch-soft pointer-events-none z-0" 
+                className={clsx(
+                  "absolute inset-0 border-2 border-ink-800 rounded-[31px_25px_34px_23px] bg-paper-50/40 shadow-sketch-soft pointer-events-none z-0",
+                  isInterestingMode && "interesting-play-stack-card interesting-play-stack-card--back",
+                )}
               />
 
               {questionPool.length === 0 && (
@@ -775,8 +934,9 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
                   >
                     <FlippingCard
                       question={card.question}
-                      category={currentCategory}
+                      category={displayCategory}
                       isFlipped={card.isFlipped}
+                      isInterestingMode={isInterestingMode}
                       assignedPlayer={card.assignedPlayer}
                       onToggle={() => {
                         if (isActive) {
@@ -805,7 +965,12 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
             </div>
 
             {questionPool.length > 0 && (
-              <p className="text-center font-hand text-base text-ink-600 animate-pulse mt-2 flex items-center justify-center gap-1.5">
+              <p
+                className={clsx(
+                  "text-center font-hand text-base text-ink-600 animate-pulse mt-2 flex items-center justify-center gap-1.5",
+                  isInterestingMode && "interesting-play-hint",
+                )}
+              >
                 <Lightbulb className="h-5 w-5 text-ink-600 shrink-0" aria-hidden />
                 <span>ปัดการ์ดไปทางซ้ายเพื่อเปลี่ยนใบใหม่ได้นะ!</span>
               </p>
@@ -825,7 +990,7 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
                 )}
                 style={{
                   "--btn-hover-rotate": "-0.6deg",
-                  backgroundColor: (questionPool.length > 0 && swipeState === "idle") ? currentCategory.accent : undefined,
+                  backgroundColor: (questionPool.length > 0 && swipeState === "idle") ? displayCategory.accent : undefined,
                 } as React.CSSProperties}
               >
                 <Shuffle className="h-5 w-5 transition-transform duration-500 ease-out group-hover:rotate-180" aria-hidden />
@@ -848,7 +1013,7 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
           <aside className="space-y-5">
             {/* Multiplayer / Turn Mode Panel */}
             <div>
-              <div className="sketchy-panel bg-white/90 p-5 paper-tilt-left">
+              <div className={clsx("sketchy-panel bg-white/90 p-5 paper-tilt-left", isInterestingMode && "interesting-play-panel")}>
                 {roomId ? (
                   // Online Room Mode
                   <>
@@ -988,7 +1153,7 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
 
             {/* Round Status Info */}
             <div>
-              <div className="sketchy-panel bg-white/90 p-5 paper-tilt-right">
+              <div className={clsx("sketchy-panel bg-white/90 p-5 paper-tilt-right", isInterestingMode && "interesting-play-panel interesting-play-status")}>
                 <div className="flex items-center gap-2 font-hand text-xl font-bold">
                   <RefreshCw className="h-5 w-5 text-ink-800" aria-hidden />
                   <span>สถานะกองคำถาม</span>
@@ -1011,7 +1176,7 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
                       className="h-full transition-all duration-500 ease-out"
                       style={{
                         width: `${(usedIds.size / Math.max(questionPool.length, 1)) * 100}%`,
-                        backgroundColor: currentCategory.accent,
+                        backgroundColor: displayCategory.accent,
                       }}
                     />
                   </div>
@@ -1027,7 +1192,7 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
 
             {/* Mindful Tips */}
             <div>
-              <div className="sketchy-panel bg-white/90 p-5 paper-tilt-left">
+              <div className={clsx("sketchy-panel bg-white/90 p-5 paper-tilt-left", isInterestingMode && "interesting-play-panel")}>
                 <div className="flex items-center gap-2 font-hand text-xl font-bold text-ink-800">
                   <BookOpenText className="h-5 w-5" aria-hidden />
                   <span>จังหวะของการ์ดนี้</span>

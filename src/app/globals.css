@@ -154,6 +154,37 @@ button {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.card-question-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(47, 41, 37, 0.45) transparent;
+  touch-action: pan-y;
+}
+
+.card-question-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.card-question-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.card-question-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(47, 41, 37, 0.36);
+}
+
+.card-question-text {
+  overflow-wrap: normal;
+  word-break: normal;
+  line-break: strict;
+  text-wrap: pretty;
+}
+
+.question-word-segment {
+  display: inline-block;
+  white-space: nowrap;
+}
+
 .card-face::after {
   position: absolute;
   inset: 12px;
@@ -184,6 +215,391 @@ button {
     linear-gradient(rgba(47, 41, 37, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(47, 41, 37, 0.05) 1px, transparent 1px);
   background-size: 28px 28px;
+}
+
+/* Interesting Talk mode */
+.interesting-talk-mode {
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(125, 211, 252, 0.34), transparent 24rem),
+    radial-gradient(circle at 88% 12%, rgba(255, 209, 243, 0.46), transparent 22rem),
+    radial-gradient(circle at 76% 86%, rgba(190, 242, 100, 0.22), transparent 20rem),
+    linear-gradient(90deg, rgba(47, 41, 37, 0.035) 1px, transparent 1px),
+    linear-gradient(rgba(47, 41, 37, 0.035) 1px, transparent 1px),
+    var(--paper);
+  background-size: auto, auto, auto, 30px 30px, 30px 30px, auto;
+}
+
+.interesting-talk-mode > .mx-auto {
+  position: relative;
+  z-index: 1;
+}
+
+.cyber-sticker-cluster {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.cyber-sticker {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  background: rgba(255, 253, 247, 0.86);
+  box-shadow: 4px 6px 0 rgba(47, 41, 37, 0.13);
+}
+
+.cyber-sticker svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  flex: none;
+}
+
+.cyber-sticker-ufo {
+  top: clamp(72px, 8vw, 112px);
+  right: clamp(18px, 6vw, 96px);
+  width: clamp(88px, 13vw, 152px);
+  height: clamp(62px, 9vw, 104px);
+  padding: 10px;
+  border-radius: 55% 45% 48% 52%;
+  background: #fdf4ff;
+  transform: rotate(5deg);
+}
+
+.cyber-sticker-zap {
+  top: clamp(150px, 16vw, 220px);
+  right: clamp(24px, 16vw, 210px);
+  width: clamp(48px, 6vw, 66px);
+  height: clamp(48px, 6vw, 66px);
+  border-radius: 42% 58% 50% 50%;
+  background: #bef264;
+  transform: rotate(-12deg);
+}
+
+.cyber-sticker-pixel {
+  top: clamp(150px, 18vw, 250px);
+  left: clamp(16px, 6vw, 82px);
+  width: clamp(54px, 6vw, 72px);
+  height: clamp(54px, 6vw, 72px);
+  padding: 8px;
+  border-radius: 10px 8px 12px 9px;
+  background: #d7fdf0;
+  transform: rotate(-7deg);
+}
+
+.mode-switch-sticker {
+  position: relative;
+  overflow: hidden;
+}
+
+.mode-switch-sticker > button {
+  position: relative;
+  z-index: 1;
+}
+
+.mode-switch-sticker--cyber {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(215, 253, 240, 0.8) 48%, rgba(255, 209, 243, 0.78)),
+    var(--paper);
+}
+
+.mode-switch-sticker--cyber::before {
+  position: absolute;
+  inset: 6px;
+  border-radius: inherit;
+  background-image:
+    linear-gradient(90deg, rgba(47, 41, 37, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(47, 41, 37, 0.08) 1px, transparent 1px);
+  background-size: 16px 16px;
+  content: "";
+  opacity: 0.5;
+}
+
+.mode-switch-button--cyber-selected {
+  background-image: linear-gradient(135deg, #ffd1f3 0%, #d7fdf0 58%, #bef264 100%) !important;
+  box-shadow:
+    3px 5px 0 rgba(47, 41, 37, 0.12),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.72);
+}
+
+.mode-switch-button--cyber-selected > span:first-child {
+  background: rgba(255, 255, 255, 0.92) !important;
+}
+
+.cyber-card-band {
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(47, 41, 37, 0.2) 0 7px,
+    rgba(255, 255, 255, 0.45) 7px 13px
+  );
+  box-shadow: inset 0 -1px 0 rgba(47, 41, 37, 0.16);
+}
+
+.interesting-play-mode {
+  isolation: isolate;
+}
+
+.interesting-play-mode .interesting-play-content {
+  position: relative;
+  z-index: 1;
+}
+
+.interesting-play-mode::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(90deg, rgba(47, 41, 37, 0.045) 1px, transparent 1px),
+    linear-gradient(rgba(47, 41, 37, 0.045) 1px, transparent 1px);
+  background-size: 30px 30px;
+  mask-image: radial-gradient(circle at 50% 28%, black, transparent 76%);
+  content: "";
+}
+
+.interesting-play-stickers {
+  opacity: 0.86;
+}
+
+.interesting-play-stickers .cyber-sticker-ufo {
+  top: clamp(18px, 4vw, 58px);
+  right: clamp(-22px, 3.5vw, 70px);
+  transform: rotate(6deg) scale(1.04);
+}
+
+.interesting-play-stickers .cyber-sticker-zap {
+  top: clamp(106px, 10vw, 168px);
+  right: clamp(20px, 14vw, 210px);
+  background: #bef264;
+}
+
+.interesting-play-stickers .cyber-sticker-pixel {
+  top: clamp(56px, 11vw, 150px);
+  left: clamp(10px, 6vw, 92px);
+  background: #d7fdf0;
+}
+
+.interesting-play-orbit-sticker {
+  position: absolute;
+  top: clamp(168px, 20vw, 280px);
+  right: clamp(8px, 9vw, 148px);
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: #e0f2fe;
+  box-shadow: 4px 6px 0 rgba(47, 41, 37, 0.13);
+  transform: rotate(10deg);
+}
+
+.interesting-play-mode-pill,
+.interesting-card-badge {
+  background-image: linear-gradient(135deg, #ffd1f3 0%, #d7fdf0 60%, #bef264 100%);
+}
+
+.interesting-play-hero {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(47, 41, 37, 0.28);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.76), rgba(215, 253, 240, 0.34) 48%, rgba(255, 209, 243, 0.38)),
+    rgba(255, 253, 247, 0.78);
+  box-shadow:
+    5px 7px 0 rgba(47, 41, 37, 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.72);
+}
+
+.interesting-play-hero::after {
+  position: absolute;
+  right: 18px;
+  bottom: -12px;
+  width: 120px;
+  height: 26px;
+  border: 1.5px dashed rgba(47, 41, 37, 0.36);
+  background: rgba(190, 242, 100, 0.48);
+  content: "";
+  transform: rotate(-2deg);
+}
+
+.interesting-play-stack-card {
+  background:
+    linear-gradient(135deg, rgba(215, 253, 240, 0.5), rgba(255, 209, 243, 0.34)),
+    var(--paper) !important;
+  box-shadow:
+    8px 10px 0 rgba(47, 41, 37, 0.1),
+    0 0 18px rgba(125, 211, 252, 0.15);
+}
+
+.interesting-play-stack-card--back {
+  background:
+    linear-gradient(135deg, rgba(255, 209, 243, 0.32), rgba(190, 242, 100, 0.24)),
+    var(--paper) !important;
+}
+
+.interesting-play-hint {
+  color: rgba(47, 41, 37, 0.72);
+}
+
+.interesting-play-panel {
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(215, 253, 240, 0.34) 48%, rgba(255, 209, 243, 0.28)),
+    rgba(255, 253, 247, 0.9) !important;
+}
+
+.interesting-play-panel::after {
+  position: absolute;
+  inset: 9px;
+  pointer-events: none;
+  border: 1px dashed rgba(47, 41, 37, 0.14);
+  border-radius: 18px 14px 20px 16px;
+  content: "";
+}
+
+.interesting-play-status .h-full {
+  background-image: linear-gradient(90deg, #ffd1f3, #7dd3fc, #bef264);
+}
+
+.card-face--interesting {
+  background:
+    radial-gradient(circle at 14% 12%, rgba(125, 211, 252, 0.28), transparent 14rem),
+    radial-gradient(circle at 84% 18%, rgba(255, 209, 243, 0.34), transparent 14rem),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(215, 253, 240, 0.24) 48%, rgba(255, 209, 243, 0.24)),
+    var(--paper) !important;
+  box-shadow:
+    10px 12px 0 rgba(47, 41, 37, 0.13),
+    0 0 0 1px rgba(125, 211, 252, 0.14),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.72);
+}
+
+.card-face--interesting::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 18px;
+  border-bottom: 1.5px solid rgba(47, 41, 37, 0.16);
+  border-radius: 31px 25px 0 0;
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(47, 41, 37, 0.18) 0 7px,
+    rgba(255, 255, 255, 0.58) 7px 13px
+  );
+  content: "";
+}
+
+.card-face--interesting-back {
+  background:
+    radial-gradient(circle at 12% 14%, rgba(190, 242, 100, 0.2), transparent 13rem),
+    radial-gradient(circle at 92% 18%, rgba(125, 211, 252, 0.28), transparent 15rem),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 209, 243, 0.22)),
+    var(--paper) !important;
+}
+
+.interesting-card-title,
+.interesting-card-corner-icon {
+  color: #2f2925;
+}
+
+.interesting-card-corner,
+.interesting-question-mark {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(215, 253, 240, 0.76)),
+    var(--paper);
+  box-shadow:
+    4px 6px 0 rgba(47, 41, 37, 0.12),
+    0 0 14px rgba(125, 211, 252, 0.14);
+}
+
+.interesting-question-mark {
+  border-style: solid;
+  background:
+    radial-gradient(circle at 45% 35%, #ffd1f3, transparent 42%),
+    linear-gradient(135deg, #d7fdf0, #fdf4ff 58%, #bef264);
+}
+
+.interesting-helper-note {
+  border-left-color: #7dd3fc !important;
+  background:
+    linear-gradient(90deg, rgba(215, 253, 240, 0.78), rgba(255, 209, 243, 0.28)) !important;
+}
+
+.interesting-tag {
+  background: rgba(255, 255, 255, 0.78) !important;
+  box-shadow: 2px 3px 0 rgba(47, 41, 37, 0.08);
+}
+
+.bg-radial-gradient {
+  background-image: radial-gradient(circle at center, var(--tw-gradient-stops));
+}
+
+.late-night .interesting-talk-mode {
+  background:
+    radial-gradient(circle at 12% 10%, rgba(14, 165, 233, 0.18), transparent 25rem),
+    radial-gradient(circle at 88% 12%, rgba(168, 85, 247, 0.18), transparent 23rem),
+    radial-gradient(circle at 76% 86%, rgba(20, 184, 166, 0.12), transparent 20rem),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    var(--paper);
+  background-size: auto, auto, auto, 30px 30px, 30px 30px, auto;
+}
+
+.late-night .cyber-sticker {
+  color: var(--ink);
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(30, 30, 34, 0.86);
+  box-shadow:
+    4px 6px 0 rgba(0, 0, 0, 0.35),
+    0 0 12px rgba(125, 211, 252, 0.16);
+}
+
+.late-night .mode-switch-sticker--cyber {
+  background:
+    linear-gradient(135deg, rgba(20, 20, 22, 0.92), rgba(14, 165, 233, 0.12) 48%, rgba(168, 85, 247, 0.12)),
+    #141416;
+}
+
+.late-night .mode-switch-sticker--cyber::before {
+  background-image:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+}
+
+.late-night .mode-switch-button--cyber-selected {
+  background-image: linear-gradient(135deg, rgba(244, 114, 182, 0.18), rgba(20, 184, 166, 0.18)) !important;
+}
+
+@media (max-width: 640px) {
+  .cyber-sticker-cluster {
+    opacity: 0.42;
+  }
+
+  .cyber-sticker-ufo {
+    top: 76px;
+    right: -18px;
+    width: 104px;
+    height: 72px;
+  }
+
+  .cyber-sticker-zap {
+    top: 154px;
+    right: 74px;
+    width: 46px;
+    height: 46px;
+  }
+
+  .cyber-sticker-pixel {
+    display: none;
+  }
 }
 
 @media (max-width: 640px) {
@@ -299,8 +715,8 @@ button {
 
 /* Neon glow for sketchy panels */
 .late-night .sketchy-panel {
-  background: rgba(22, 22, 26, 0.88);
-  border-color: var(--category-glow, var(--ink));
+  background: rgba(22, 22, 26, 0.88) !important;
+  border-color: var(--category-glow, var(--ink)) !important;
   box-shadow: 
     4px 6px 0 rgba(0, 0, 0, 0.45),
     0 0 12px var(--category-glow-soft, rgba(255, 255, 255, 0.05));
@@ -322,6 +738,14 @@ button {
 
 .late-night .card-face::after {
   border-color: var(--category-glow-soft, rgba(255, 255, 255, 0.12));
+}
+
+.late-night .card-question-scroll {
+  scrollbar-color: rgba(255, 255, 255, 0.38) transparent;
+}
+
+.late-night .card-question-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.28);
 }
 
 .late-night .doodle-grid {
@@ -346,6 +770,124 @@ button {
 
 .late-night .btn-doodle:active:not(:disabled) {
   box-shadow: 1px 2px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* Fallback overrides for buttons with hardcoded background utilities in late-night mode */
+.late-night .btn-doodle.bg-white,
+.late-night .btn-doodle.bg-paper-50,
+.late-night .btn-doodle.bg-paper-100,
+.late-night .btn-doodle.bg-paper-200 {
+  background-color: #1e1e22 !important;
+  color: var(--ink) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.late-night .btn-doodle.bg-white:hover,
+.late-night .btn-doodle.bg-paper-50:hover,
+.late-night .btn-doodle.bg-paper-100:hover,
+.late-night .btn-doodle.bg-paper-200:hover {
+  background-color: #242429 !important;
+  color: var(--ink) !important;
+  border-color: var(--category-accent, var(--btn-glow, var(--ink))) !important;
+  box-shadow: 
+    4px 5px 0 rgba(0, 0, 0, 0.4),
+    0 0 10px var(--category-accent, var(--btn-glow, var(--ink))) !important;
+}
+
+/* Themed neon colors for buttons in late-night mode */
+.late-night .btn-doodle.bg-doodle-lemon {
+  background-color: #1e1e22 !important;
+  border-color: #fde047 !important;
+  color: #fef08a !important;
+  box-shadow: 
+    3px 5px 0 rgba(0, 0, 0, 0.4),
+    0 0 10px rgba(253, 224, 71, 0.2) !important;
+}
+
+.late-night .btn-doodle.bg-doodle-lemon:hover {
+  background-color: #242429 !important;
+  box-shadow: 
+    4px 6px 0 rgba(0, 0, 0, 0.4),
+    0 0 12px rgba(253, 224, 71, 0.35) !important;
+}
+
+.late-night .btn-doodle.bg-doodle-mint {
+  background-color: #1e1e22 !important;
+  border-color: #4ade80 !important;
+  color: #a7f3d0 !important;
+  box-shadow: 
+    3px 5px 0 rgba(0, 0, 0, 0.4),
+    0 0 10px rgba(74, 222, 128, 0.2) !important;
+}
+
+.late-night .btn-doodle.bg-doodle-mint:hover {
+  background-color: #242429 !important;
+  box-shadow: 
+    4px 6px 0 rgba(0, 0, 0, 0.4),
+    0 0 12px rgba(74, 222, 128, 0.35) !important;
+}
+
+.late-night .btn-doodle.bg-doodle-peach {
+  background-color: #1e1e22 !important;
+  border-color: #f97316 !important;
+  color: #fed7aa !important;
+  box-shadow: 
+    3px 5px 0 rgba(0, 0, 0, 0.4),
+    0 0 10px rgba(249, 115, 22, 0.2) !important;
+}
+
+.late-night .btn-doodle.bg-doodle-peach:hover {
+  background-color: #242429 !important;
+  box-shadow: 
+    4px 6px 0 rgba(0, 0, 0, 0.4),
+    0 0 12px rgba(249, 115, 22, 0.35) !important;
+}
+
+.late-night .btn-doodle.bg-doodle-sky {
+  background-color: #1e1e22 !important;
+  border-color: #38bdf8 !important;
+  color: #bae6fd !important;
+  box-shadow: 
+    3px 5px 0 rgba(0, 0, 0, 0.4),
+    0 0 10px rgba(56, 189, 248, 0.2) !important;
+}
+
+.late-night .btn-doodle.bg-doodle-sky:hover {
+  background-color: #242429 !important;
+  box-shadow: 
+    4px 6px 0 rgba(0, 0, 0, 0.4),
+    0 0 12px rgba(56, 189, 248, 0.35) !important;
+}
+
+/* Translucent red warning/danger buttons in late-night mode */
+.late-night .btn-doodle.bg-red-50 {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+  border-color: #ef4444 !important;
+  color: #fca5a5 !important;
+}
+
+.late-night .btn-doodle.bg-red-50:hover {
+  background-color: rgba(239, 68, 68, 0.25) !important;
+  border-color: #f87171 !important;
+  color: #fee2e2 !important;
+  box-shadow: 
+    4px 5px 0 rgba(0, 0, 0, 0.4),
+    0 0 10px rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Form controls in late-night mode */
+.late-night input,
+.late-night select,
+.late-night textarea {
+  background-color: #1a1a1e !important;
+  color: var(--ink) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.late-night input::placeholder,
+.late-night textarea::placeholder {
+  color: var(--ink-700) !important;
+  opacity: 0.55;
 }
 
 /* Tape look in late night mode */
@@ -376,28 +918,31 @@ button {
 }
 
 /* Late-night Tabs specific styles */
-.late-night button[aria-pressed="true"].btn-doodle {
+.late-night button[aria-pressed="true"].btn-doodle,
+.late-night button[aria-checked="true"].btn-doodle {
   background-color: #222226 !important;
   color: var(--ink) !important;
   border-color: var(--category-accent, var(--ink)) !important;
   box-shadow: 
     4px 5px 0 rgba(0, 0, 0, 0.4),
-    0 0 12px var(--category-accent) !important;
+    0 0 12px var(--category-accent, var(--btn-glow, var(--ink))) !important;
 }
 
-.late-night button[aria-pressed="false"].btn-doodle {
+.late-night button[aria-pressed="false"].btn-doodle,
+.late-night button[aria-checked="false"].btn-doodle {
   background-color: rgba(20, 20, 22, 0.6) !important;
   color: #a1a1aa !important;
   border-color: rgba(255, 255, 255, 0.15) !important;
 }
 
-.late-night button[aria-pressed="false"].btn-doodle:hover {
+.late-night button[aria-pressed="false"].btn-doodle:hover,
+.late-night button[aria-checked="false"].btn-doodle:hover {
   background-color: #1e1e22 !important;
   color: var(--ink) !important;
   border-color: var(--category-accent, var(--ink)) !important;
   box-shadow: 
     4px 5px 0 rgba(0, 0, 0, 0.4),
-    0 0 8px var(--category-accent) !important;
+    0 0 8px var(--category-accent, var(--btn-glow, var(--ink))) !important;
 }
 
 /* Late-night Card styles */
@@ -520,7 +1065,7 @@ button {
   box-shadow: 0 0 8px var(--category-glow-soft);
 }
 
-.late-night .sketchy-panel-interactive span.bg-white {
+.late-night .sketchy-panel span.bg-white {
   background-color: #1e1e22 !important;
   border-color: rgba(255, 255, 255, 0.15) !important;
   color: #a1a1aa !important;
@@ -530,8 +1075,27 @@ button {
   box-shadow: 0 0 12px var(--category-glow);
 }
 
-/* Playroom status bar progress */
-.late-night div.bg-paper-50 {
+/* General badges and tags outside card interactive panels */
+.late-night span.bg-white,
+.late-night span.bg-paper-50,
+.late-night span.bg-paper-50\/80 {
+  background-color: #1e1e22 !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: var(--ink) !important;
+}
+
+.late-night .btn-doodle span.bg-white,
+.late-night .btn-doodle span.bg-paper-50,
+.late-night .btn-doodle span.bg-paper-50\/80 {
+  background-color: #1a1a1e !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: var(--ink) !important;
+}
+
+/* Playroom status bar progress and other paper elements */
+.late-night div.bg-paper-50,
+.late-night div.bg-paper-50\/80,
+.late-night div.bg-paper-50\/60 {
   background-color: #141416 !important;
   border-color: rgba(255, 255, 255, 0.15) !important;
 }

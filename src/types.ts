@@ -5,6 +5,7 @@ export type QuestionCategory = {
   description: string;
   accent: string;
   sortOrder: number;
+  talkModes: string[];
 };
 
 export type DeepQuestion = {
@@ -21,6 +22,7 @@ export type DeepQuestion = {
   defaultPool: boolean;
   contentNote: string;
   aftercareLevel: number;
+  talkModes: string[];
 };
 
 export type QuestionDeck = {

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getQuestionDeck } from "@/lib/questions";
-import { KhuiDeepPlay } from "@/components/khui-deep-play";
+import { KhuiDeepPlay } from "@/components/play/khui-deep-play";
 import { SoundProvider } from "@/components/sound-provider";
 
 export const revalidate = 300;

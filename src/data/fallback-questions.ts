@@ -1,6 +1,7 @@
 import type { DeepQuestion, QuestionCategory, QuestionDeck } from "@/types";
 
 export const fallbackCategories: QuestionCategory[] = [
+  // --- โหมดอบอุ่นใจ (Deep Talk) ---
   {
     id: "cat-icebreaker",
     slug: "icebreaker",
@@ -8,6 +9,7 @@ export const fallbackCategories: QuestionCategory[] = [
     description: "เริ่มคุยแบบเบาใจ ให้บรรยากาศค่อย ๆ อุ่นขึ้น",
     accent: "#f7e7a7",
     sortOrder: 1,
+    talkModes: ["deep"],
   },
   {
     id: "cat-love",
@@ -16,6 +18,7 @@ export const fallbackCategories: QuestionCategory[] = [
     description: "ชวนมองความรัก ความคาดหวัง และวิธีดูแลกัน",
     accent: "#f3b8c6",
     sortOrder: 2,
+    talkModes: ["deep"],
   },
   {
     id: "cat-memory",
@@ -24,6 +27,7 @@ export const fallbackCategories: QuestionCategory[] = [
     description: "ย้อนดูเรื่องที่ผ่านมา แล้วเปิดพื้นที่ให้อนาคต",
     accent: "#b9d9f2",
     sortOrder: 3,
+    talkModes: ["deep"],
   },
   {
     id: "cat-family",
@@ -32,6 +36,71 @@ export const fallbackCategories: QuestionCategory[] = [
     description: "คุยเรื่องบ้าน รากของตัวตน และความผูกพัน",
     accent: "#ccebd9",
     sortOrder: 4,
+    talkModes: ["deep"],
+  },
+  // --- โหมดคุยเปิดโลก (Interesting Talk) ---
+  {
+    id: "cat-weird-ideas",
+    slug: "weird-ideas",
+    name: "ไอเดียหลุดโลก",
+    description: "คำถามแปลก สนุก และชวนปล่อยสมองให้วิ่งออกนอกกรอบเดิม",
+    accent: "#bef264",
+    sortOrder: 1,
+    talkModes: ["interesting"],
+  },
+  {
+    id: "cat-parallel-world",
+    slug: "parallel-world",
+    name: "ทางเลือกโลกขนาน",
+    description: "ลองสลับเส้นเวลา ความสัมพันธ์ และสิ่งที่อาจเกิดขึ้นอีกแบบ",
+    accent: "#c4b5fd",
+    sortOrder: 2,
+    talkModes: ["interesting"],
+  },
+  {
+    id: "cat-human-analysis",
+    slug: "human-analysis",
+    name: "วิเคราะห์มนุษย์",
+    description: "สแกนนิสัย ความคิด ความฝัน และพฤติกรรมแบบนักทดลองตัวจิ๋ว",
+    accent: "#7dd3fc",
+    sortOrder: 3,
+    talkModes: ["interesting"],
+  },
+  {
+    id: "cat-suppose",
+    slug: "suppose",
+    name: "สมมติตัวเองเป็น…",
+    description: "ลองสวมบทบาทเป็นสิ่งอื่น คนอื่น หรือจำลองสถานการณ์สมมติ",
+    accent: "#5eead4",
+    sortOrder: 4,
+    talkModes: ["interesting"],
+  },
+  {
+    id: "cat-weird-world",
+    slug: "weird-world",
+    name: "โลกนี้มันแปลกดีนะ",
+    description: "เรื่องราวแปลกประหลาดรอบตัวและมุมมองต่อสิ่งต่างๆ ที่คาดไม่ถึง",
+    accent: "#fde047",
+    sortOrder: 5,
+    talkModes: ["interesting"],
+  },
+  {
+    id: "cat-unborn-future",
+    slug: "unborn-future",
+    name: "อนาคตที่ยังไม่เกิด",
+    description: "จินตนาการถึงเทคโนโลยี สังคม และชีวิตในอีกหลายสิบปีข้างหน้า",
+    accent: "#f472b6",
+    sortOrder: 6,
+    talkModes: ["interesting"],
+  },
+  {
+    id: "cat-awake-philosophy",
+    slug: "awake-philosophy",
+    name: "ปรัชญาแบบไม่หลับ",
+    description: "คำถามคิดเชิงปรัชญาสนุกๆ ชวนคุย ถกเถียง และตีความ",
+    accent: "#fda4af",
+    sortOrder: 7,
+    talkModes: ["interesting"],
   },
 ];
 
@@ -47,8 +116,10 @@ const questionSafetyDefaults = {
 const fallbackQuestionCards: Array<
   Omit<
     DeepQuestion,
-    "audience" | "sensitivity" | "requiresConsent" | "defaultPool" | "contentNote" | "aftercareLevel"
-  >
+    "audience" | "sensitivity" | "requiresConsent" | "defaultPool" | "contentNote" | "aftercareLevel" | "talkModes"
+  > & {
+    talkModes?: string[];
+  }
 > = [
   {
     id: "icebreaker-01",
@@ -410,10 +481,92 @@ const fallbackQuestionCards: Array<
     level: 4,
     tags: ["ขอบคุณ", "ปล่อยวาง"],
   },
+  // --- โหมดคุยเปิดโลก (Interesting Talk) Default Questions ---
+  {
+    id: "interesting-icebreaker-01",
+    categoryId: "cat-weird-ideas",
+    categorySlug: "weird-ideas",
+    question: "ถ้าคุณสามารถจ้าง 'มนุษย์ล่องหน' มาช่วยทำภารกิจส่วนตัวอะไรก็ได้ 1 อย่างในชีวิตประจำวัน คุณจะจ้างเขาทำอะไร",
+    helperText: "ห้ามตอบเรื่องผิดกฎหมายนะ เน้นเรื่องขี้เกียจหรือเรื่องกวนๆ",
+    level: 1,
+    tags: ["จินตนาการ", "สนุกสนาน"],
+    talkModes: ["interesting"],
+  },
+  {
+    id: "interesting-icebreaker-02",
+    categoryId: "cat-weird-ideas",
+    categorySlug: "weird-ideas",
+    question: "ถ้าจู่ๆ กฎฟิสิกส์เปลี่ยนไป ทำให้ทุกคนบนโลก 'ลอยได้สูง 1 เมตร' เมื่อรู้สึกดีใจ คุณคิดว่าชีวิตประจำวันของคุณจะวุ่นวายขึ้นอย่างไร",
+    helperText: "ลองนึกภาพตอนดูคอนเสิร์ต รถไฟฟ้า หรือตอนนั่งคุยกัน",
+    level: 2,
+    tags: ["สมมติ", "ขำๆ"],
+    talkModes: ["interesting"],
+  },
+  {
+    id: "interesting-love-01",
+    categoryId: "cat-parallel-world",
+    categorySlug: "parallel-world",
+    question: "ถ้าในโลกขนานมีแอปหาคู่ที่แมตช์คนจาก 'ระดับพลังงานความเบียว/ความเพี้ยนที่ตรงกัน' คุณคิดว่าโปรไฟล์ของคุณจะเขียนเตือนคนที่จะเข้ามาคุยว่าอะไรบ้าง",
+    helperText: "บอกระดับความบ้าบอของตัวเองแบบน่ารักๆ",
+    level: 1,
+    tags: ["ความสัมพันธ์", "นิสัย"],
+    talkModes: ["interesting"],
+  },
+  {
+    id: "interesting-love-02",
+    categoryId: "cat-parallel-world",
+    categorySlug: "parallel-world",
+    question: "สมมติว่าคุณกับแฟนสลับร่างกันได้ทุกวันครบรอบปีละ 1 วัน เรื่องแรกที่คุณคิดว่าแฟน (ในร่างคุณ) จะต้องปวดหัวหรือทำพังแน่นอนคืออะไร",
+    helperText: "คิดถึงนิสัยหรือกิจวัตรประจำวันที่ต่างกันสุดขั้ว",
+    level: 2,
+    tags: ["ความสัมพันธ์", "สลับร่าง"],
+    talkModes: ["interesting"],
+  },
+  {
+    id: "interesting-memory-01",
+    categoryId: "cat-human-analysis",
+    categorySlug: "human-analysis",
+    question: "ถ้าเราสามารถซื้อ 'ชิปหน่วยความจำ' เพื่อเข้าไปสัมผัสประสบการณ์ของคนอื่นได้ ประสบการณ์ของใครบนโลกที่คุณยอมจ่ายเงินแพงที่สุดเพื่อไปลองลิ้มรส",
+    helperText: "อาจเป็นนักบินอวกาศ ศิลปิน หรือแมว",
+    level: 2,
+    tags: ["มุมมอง", "จินตนาการ"],
+    talkModes: ["interesting"],
+  },
+  {
+    id: "interesting-memory-02",
+    categoryId: "cat-human-analysis",
+    categorySlug: "human-analysis",
+    question: "ถ้าต้องเลือกนิสัยแปลก ๆ ของตัวเอง 1 อย่างไปจดลิขสิทธิ์เป็น 'แบรนด์สินค้า' นิสัยข้อไหนของคุณที่คนน่าจะมาต่อคิวซื้อมากที่สุด",
+    helperText: "เช่น ความสามารถในการนอนได้ทุกที่ หรือการคิดมุกแป้กได้เร็ว",
+    level: 3,
+    tags: ["วิเคราะห์ตนเอง", "สร้างสรรค์"],
+    talkModes: ["interesting"],
+  },
+  {
+    id: "interesting-family-01",
+    categoryId: "cat-suppose",
+    categorySlug: "suppose",
+    question: "ถ้าสมาชิกในครอบครัวของคุณกลายเป็น 'แก๊งฮีโร่ผู้พิทักษ์' คุณคิดว่าแต่ละคน (รวมถึงตัวคุณ) จะมีพลังพิเศษอะไรที่อิงจากนิสัยจริง ๆ ในบ้าน",
+    helperText: "เช่น พลังบ่นเสียงสะท้อน หรือพลังตื่นเช้าทำกับข้าว",
+    level: 2,
+    tags: ["ครอบครัว", "ฮีโร่"],
+    talkModes: ["interesting"],
+  },
+  {
+    id: "interesting-family-02",
+    categoryId: "cat-suppose",
+    categorySlug: "suppose",
+    question: "สมมติว่าบ้านของคุณได้รับอนุญาตให้ตั้ง 'กฎแปลก ๆ' ประจำตระกูลเพิ่มขึ้นมา 1 ข้อที่ทุกคนต้องปฏิบัติตามอย่างเคร่งครัด คุณอยากตั้งกฎว่าอะไรเพื่อให้ทุกคนในบ้านหัวเราะได้มากขึ้น",
+    helperText: "เช่น ห้ามพูดคำว่า 'กินอะไรดี' หรือต้องเดินถอยหลังเวลาเข้าห้องครัว",
+    level: 3,
+    tags: ["ครอบครัว", "ความอบอุ่น"],
+    talkModes: ["interesting"],
+  },
 ];
 
 export const fallbackQuestions: DeepQuestion[] = fallbackQuestionCards.map((question) => ({
   ...questionSafetyDefaults,
+  talkModes: ["deep"],
   ...question,
 }));
 

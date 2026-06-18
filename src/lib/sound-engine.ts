@@ -312,11 +312,10 @@ export class SoundEngine {
       audio.load();
     }
     audio.volume = this._prefs.bgmVolume;
-
     try {
       await audio.play();
       this.updatePrefs({ bgmEnabled: true });
-    } catch (_err) {
+    } catch {
       console.warn(`[KhuiDeep BGM] ❌ เล่นเพลงไม่ได้ (ไม่พบไฟล์ ${url})`);
       console.warn("👉 วิธีแก้: ให้สร้างโฟลเดอร์ public/audio/ และโหลดไฟล์เสียงมาใส่ ตั้งชื่อเป็น track1.mp3");
       this.updatePrefs({ bgmEnabled: false });

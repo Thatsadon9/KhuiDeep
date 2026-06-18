@@ -39,6 +39,7 @@ export async function getQuestionDeck(): Promise<QuestionDeck> {
       description: category.description ?? "",
       accent: category.accent,
       sortOrder: category.sort_order,
+      talkModes: category.talk_modes ?? ["deep"],
     }),
   );
 
@@ -66,6 +67,7 @@ export async function getQuestionDeck(): Promise<QuestionDeck> {
         defaultPool: question.default_pool ?? true,
         contentNote: question.content_note ?? "",
         aftercareLevel: question.aftercare_level ?? 0,
+        talkModes: question.talk_modes ?? ["deep"],
       };
     })
     .filter((question): question is DeepQuestion => Boolean(question));

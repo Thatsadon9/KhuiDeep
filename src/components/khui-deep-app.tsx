@@ -10,8 +10,8 @@ import {
   Shuffle,
   Sparkles,
 } from "lucide-react";
-import { CategoryTabs } from "@/components/category-tabs";
-import { FlippingCard } from "@/components/flipping-card";
+import { CategoryTabs } from "@/components/play/category-tabs";
+import { FlippingCard } from "@/components/play/flipping-card";
 import type { DeepQuestion, QuestionCategory, QuestionDeck } from "@/types";
 
 type KhuiDeepAppProps = {
@@ -25,6 +25,7 @@ const allCategory: QuestionCategory = {
   description: "รวมคำถามจากทุกหมวดไว้ในกองเดียว",
   accent: "#ffd5bd",
   sortOrder: 0,
+  talkModes: ["deep", "interesting"],
 };
 
 function pickRandomQuestion(pool: DeepQuestion[], currentId?: string) {
