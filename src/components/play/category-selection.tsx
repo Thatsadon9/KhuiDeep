@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
 import { AnimatePresence, motion } from "framer-motion";
@@ -39,6 +39,7 @@ import {
   type TalkModeId,
 } from "@/lib/talk-modes";
 import type { QuestionCategory, QuestionDeck } from "@/types";
+import { trackEventAsync } from "@/lib/analytics";
 
 type CategorySelectionProps = {
   deck: QuestionDeck;
@@ -331,6 +332,13 @@ export function CategorySelection({ deck }: CategorySelectionProps) {
     return modeQuestions.filter((question) => question.categorySlug === setupCategory.slug);
   }, [modeQuestions, setupCategory]);
 
+  useEffect(() => {
+    void trackEventAsync("page_view", {
+      talk_mode: selectedTalkMode,
+      page_path: "/",
+    });
+  }, [selectedTalkMode]);
+
   const openSetup = (category: QuestionCategory) => {
     setSetupCategory(category);
     setSetupStep("depth");
@@ -348,13 +356,21 @@ export function CategorySelection({ deck }: CategorySelectionProps) {
     setSetupStep("audience");
   };
 
-  const chooseAudience = (audience: string) => {
+  const chooseAudience = async (audience: string) => {
     if (!setupCategory || !selectedDepth) return;
 
     const params = new URLSearchParams({
       mode: selectedTalkMode,
       depth: String(selectedDepth),
       audience,
+    });
+
+    await trackEventAsync("play_start", {
+      talk_mode: selectedTalkMode,
+      category_slug: setupCategory.slug,
+      depth: selectedDepth,
+      audience,
+      page_path: "/",
     });
 
     router.push(`/play/${setupCategory.slug}?${params.toString()}`);
@@ -458,11 +474,11 @@ export function CategorySelection({ deck }: CategorySelectionProps) {
           <div
             className={clsx(
               "inline-flex rotate-[-1.5deg] items-center gap-2 rounded-full border-2 border-ink-800 px-4 py-1.5 font-hand text-base font-bold shadow-sketch-soft",
-              isInterestingMode ? "bg-[#bef264]" : "bg-doodle-lemon",
+              isInterestingMode ? "interesting-mode-badge" : "bg-doodle-lemon",
             )}
           >
             {isInterestingMode ? (
-              <Zap className="h-5 w-5 animate-pulse text-ink-900" aria-hidden />
+              <Zap className="interesting-mode-badge-icon h-5 w-5 animate-pulse" aria-hidden />
             ) : (
               <Sparkles className="h-5 w-5 animate-pulse text-ink-900" aria-hidden />
             )}

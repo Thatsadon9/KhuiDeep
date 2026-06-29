@@ -1,3 +1,4 @@
+import { AdminAuthGuard } from "@/components/admin/admin-auth-guard";
 import { KhuiDeepAdmin } from "@/components/admin/khui-deep-admin";
 
 export const metadata = {
@@ -6,5 +7,9 @@ export const metadata = {
 };
 
 export default function AdminPage() {
-  return <KhuiDeepAdmin />;
+  return (
+    <AdminAuthGuard>
+      <KhuiDeepAdmin />
+    </AdminAuthGuard>
+  );
 }

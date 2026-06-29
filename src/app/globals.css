@@ -9,6 +9,8 @@
   --paper-300: #e5c690;
   
   --ink: #2f2925;
+  --ink-500: #6b5f55;
+  --ink-600: #524840;
   --ink-700: #3f352d;
   --ink-800: #2f2925;
   --ink-900: #211d1a;
@@ -578,6 +580,168 @@ button {
   background-image: linear-gradient(135deg, rgba(244, 114, 182, 0.18), rgba(20, 184, 166, 0.18)) !important;
 }
 
+/* Late-night Interesting Talk — play page & cards */
+.late-night .interesting-play-hero {
+  background:
+    linear-gradient(135deg, rgba(18, 18, 20, 0.96), rgba(14, 165, 233, 0.08) 52%, rgba(190, 242, 100, 0.06)) !important;
+  border-color: rgba(190, 242, 100, 0.32) !important;
+  box-shadow:
+    4px 6px 0 rgba(0, 0, 0, 0.45),
+    0 0 16px rgba(190, 242, 100, 0.12),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06) !important;
+}
+
+.late-night .interesting-play-hero::after {
+  background: rgba(190, 242, 100, 0.12);
+  border-color: rgba(190, 242, 100, 0.28);
+}
+
+.late-night .interesting-play-hero p,
+.late-night .interesting-play-status p {
+  color: var(--ink-600) !important;
+}
+
+.late-night .interesting-play-mode-pill {
+  background-image: none !important;
+  background-color: rgba(16, 16, 18, 0.92) !important;
+  border-color: var(--category-glow, #bef264) !important;
+  color: var(--category-glow, #d9f99d) !important;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--category-glow, #bef264) 28%, transparent);
+}
+
+.late-night .interesting-pill-icon {
+  color: var(--category-glow, #d9f99d) !important;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--category-glow, #bef264) 50%, transparent));
+}
+
+.late-night .interesting-play-hint {
+  color: #d9f99d !important;
+}
+
+.late-night .interesting-hint-icon {
+  color: #bef264 !important;
+  filter: drop-shadow(0 0 6px rgba(190, 242, 100, 0.45));
+}
+
+.late-night .interesting-play-panel {
+  background:
+    linear-gradient(135deg, rgba(18, 18, 20, 0.94), rgba(14, 165, 233, 0.06) 48%, rgba(168, 85, 247, 0.05)) !important;
+  border-color: rgba(190, 242, 100, 0.22) !important;
+  box-shadow:
+    4px 6px 0 rgba(0, 0, 0, 0.4),
+    0 0 12px rgba(125, 211, 252, 0.1);
+}
+
+.late-night .interesting-play-panel::after {
+  border-color: rgba(190, 242, 100, 0.12);
+}
+
+.late-night .play-progress-track {
+  background-color: #141416 !important;
+  border-color: rgba(190, 242, 100, 0.28) !important;
+}
+
+.late-night .play-progress-fill {
+  box-shadow: 0 0 10px color-mix(in srgb, var(--category-glow, #bef264) 45%, transparent);
+}
+
+.late-night .interesting-play-progress-fill,
+.late-night .interesting-play-status .play-progress-fill {
+  background-image: linear-gradient(90deg, #f472b6, #38bdf8, #bef264) !important;
+  background-color: transparent !important;
+}
+
+.late-night .card-face--interesting,
+.late-night .card-face--interesting-back {
+  background:
+    radial-gradient(circle at 14% 12%, rgba(56, 189, 248, 0.12), transparent 14rem),
+    radial-gradient(circle at 84% 18%, rgba(244, 114, 182, 0.1), transparent 14rem),
+    linear-gradient(135deg, rgba(20, 20, 24, 0.98), rgba(24, 24, 28, 0.95)) !important;
+  border-color: var(--card-accent, #bef264) !important;
+  box-shadow:
+    8px 10px 0 rgba(0, 0, 0, 0.5),
+    0 0 18px color-mix(in srgb, var(--card-accent, #bef264) 30%, transparent),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+}
+
+.late-night .interesting-card-title,
+.late-night .interesting-card-corner-icon {
+  color: #f4f4f5 !important;
+}
+
+.late-night .interesting-card-badge {
+  background-image: none !important;
+  background-color: rgba(16, 16, 18, 0.9) !important;
+  border-color: var(--card-accent, #bef264) !important;
+  color: var(--card-accent, #d9f99d) !important;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--card-accent, #bef264) 25%, transparent);
+}
+
+.late-night .interesting-helper-note {
+  background: linear-gradient(90deg, rgba(14, 165, 233, 0.14), rgba(190, 242, 100, 0.08)) !important;
+  border-left-color: #7dd3fc !important;
+  color: #e0f2fe !important;
+  box-shadow: 0 0 10px rgba(125, 211, 252, 0.12);
+}
+
+.late-night .interesting-tag {
+  background: rgba(24, 24, 28, 0.9) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #d4d4d8 !important;
+}
+
+.late-night .interesting-question-mark {
+  background:
+    radial-gradient(circle at 45% 35%, rgba(244, 114, 182, 0.35), transparent 42%),
+    linear-gradient(135deg, rgba(20, 30, 28, 0.95), rgba(30, 20, 35, 0.95)) !important;
+  border-color: var(--card-accent, #bef264) !important;
+}
+
+.late-night .interesting-play-stack-card,
+.late-night .interesting-play-stack-card--back {
+  background: rgba(18, 18, 22, 0.55) !important;
+  border-color: rgba(190, 242, 100, 0.15) !important;
+  box-shadow: 0 0 12px rgba(125, 211, 252, 0.08);
+}
+
+.late-night .interesting-play-orbit-sticker {
+  background: rgba(20, 20, 24, 0.88) !important;
+  border-color: rgba(125, 211, 252, 0.45) !important;
+  color: #bae6fd !important;
+  box-shadow: 0 0 12px rgba(125, 211, 252, 0.2);
+}
+
+.late-night .cyber-sticker-zap {
+  background: rgba(24, 28, 16, 0.92) !important;
+  color: #bef264 !important;
+}
+
+.late-night .cyber-sticker-pixel {
+  background: rgba(16, 28, 26, 0.92) !important;
+  color: #5eead4 !important;
+}
+
+.late-night .cyber-sticker-ufo {
+  background: rgba(28, 20, 32, 0.92) !important;
+  color: #e9d5ff !important;
+}
+
+.late-night .interesting-mode-badge {
+  background: rgba(24, 28, 16, 0.92) !important;
+  border-color: #bef264 !important;
+  color: #ecfccb !important;
+  box-shadow: 0 0 12px rgba(190, 242, 100, 0.2);
+}
+
+.late-night .interesting-mode-badge-icon {
+  color: #d9f99d !important;
+  filter: drop-shadow(0 0 4px rgba(190, 242, 100, 0.45));
+}
+
+.late-night .interesting-play-status .text-ink-500 {
+  color: var(--ink-500) !important;
+}
+
 @media (max-width: 640px) {
   .cyber-sticker-cluster {
     opacity: 0.42;
@@ -688,6 +852,8 @@ button {
   --paper-300: #2a2a30;
 
   --ink: #f4f4f5;
+  --ink-500: #a1a1aa;
+  --ink-600: #d4d4d8;
   --ink-700: #d4d4d8;
   --ink-800: #e4e4e7;
   --ink-900: #f4f4f5;
@@ -859,6 +1025,38 @@ button {
     0 0 12px rgba(56, 189, 248, 0.35) !important;
 }
 
+.late-night .btn-doodle.bg-doodle-rose {
+  background-color: #1e1e22 !important;
+  border-color: #f472b6 !important;
+  color: #fbcfe8 !important;
+  box-shadow: 
+    3px 5px 0 rgba(0, 0, 0, 0.4),
+    0 0 10px rgba(244, 114, 182, 0.2) !important;
+}
+
+.late-night .btn-doodle.bg-doodle-rose:hover {
+  background-color: #242429 !important;
+  box-shadow: 
+    4px 6px 0 rgba(0, 0, 0, 0.4),
+    0 0 12px rgba(244, 114, 182, 0.35) !important;
+}
+
+.late-night .btn-doodle.bg-doodle-lilac {
+  background-color: #1e1e22 !important;
+  border-color: #c4b5fd !important;
+  color: #ddd6fe !important;
+  box-shadow: 
+    3px 5px 0 rgba(0, 0, 0, 0.4),
+    0 0 10px rgba(196, 181, 253, 0.2) !important;
+}
+
+.late-night .btn-doodle.bg-doodle-lilac:hover {
+  background-color: #242429 !important;
+  box-shadow: 
+    4px 6px 0 rgba(0, 0, 0, 0.4),
+    0 0 12px rgba(196, 181, 253, 0.35) !important;
+}
+
 /* Translucent red warning/danger buttons in late-night mode */
 .late-night .btn-doodle.bg-red-50 {
   background-color: rgba(239, 68, 68, 0.15) !important;
@@ -873,6 +1071,98 @@ button {
   box-shadow: 
     4px 5px 0 rgba(0, 0, 0, 0.4),
     0 0 10px rgba(239, 68, 68, 0.3) !important;
+}
+
+.late-night .btn-doodle.bg-red-100 {
+  background-color: rgba(239, 68, 68, 0.18) !important;
+  border-color: #ef4444 !important;
+  color: #fca5a5 !important;
+}
+
+.late-night .btn-doodle.bg-red-100:hover {
+  background-color: rgba(239, 68, 68, 0.28) !important;
+  border-color: #f87171 !important;
+  color: #fee2e2 !important;
+  box-shadow: 
+    4px 5px 0 rgba(0, 0, 0, 0.4),
+    0 0 10px rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Red badges and labels in late-night mode */
+.late-night .bg-red-50 {
+  background-color: rgba(239, 68, 68, 0.12) !important;
+}
+
+.late-night .bg-red-100 {
+  background-color: rgba(239, 68, 68, 0.18) !important;
+}
+
+.late-night .text-red-500,
+.late-night .text-red-600 {
+  color: #fca5a5 !important;
+}
+
+.late-night .border-red-200 {
+  border-color: rgba(239, 68, 68, 0.35) !important;
+}
+
+/* Inline code snippets in late-night mode */
+.late-night code.bg-white {
+  background-color: #1a1a1e !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: var(--ink) !important;
+}
+
+/* Admin panel badge in late-night mode */
+.late-night nav div.bg-doodle-lemon {
+  background-color: rgba(253, 224, 71, 0.15) !important;
+  border-color: #fde047 !important;
+  color: #fef08a !important;
+  box-shadow: 0 0 10px rgba(253, 224, 71, 0.2);
+}
+
+.late-night div.bg-doodle-lilac {
+  background-color: rgba(196, 181, 253, 0.14) !important;
+  border-color: #c4b5fd !important;
+  color: #ddd6fe !important;
+  box-shadow: 0 0 10px rgba(196, 181, 253, 0.18);
+}
+
+.admin-stat-icon {
+  background-color: color-mix(in srgb, var(--admin-icon-accent, #f7e7a7) 78%, white);
+}
+
+.late-night .admin-stat-icon {
+  background-color: #18181c !important;
+  border-color: var(--admin-icon-accent, #fde047) !important;
+  box-shadow:
+    0 0 10px color-mix(in srgb, var(--admin-icon-accent, #fde047) 28%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--admin-icon-accent, #fde047) 12%, transparent);
+}
+
+.late-night .admin-stat-icon svg {
+  color: var(--admin-icon-accent, #fde047) !important;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--admin-icon-accent, #fde047) 45%, transparent));
+}
+
+.late-night .admin-badge-icon {
+  color: #fef08a !important;
+  filter: drop-shadow(0 0 5px rgba(253, 224, 71, 0.45));
+}
+
+.late-night div.bg-doodle-lilac .admin-badge-icon {
+  color: #ddd6fe !important;
+  filter: drop-shadow(0 0 5px rgba(196, 181, 253, 0.45));
+}
+
+.admin-chart-bar {
+  background-color: color-mix(in srgb, var(--admin-icon-accent, #b9d9f2) 72%, white);
+}
+
+.late-night .admin-chart-bar {
+  background-color: color-mix(in srgb, var(--admin-icon-accent, #38bdf8) 32%, #18181c) !important;
+  border-color: var(--admin-icon-accent, #38bdf8) !important;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--admin-icon-accent, #38bdf8) 22%, transparent);
 }
 
 /* Form controls in late-night mode */
@@ -1119,9 +1409,19 @@ button {
   border-color: rgba(255, 255, 255, 0.05) !important;
 }
 
+.late-night div.bg-doodle-sky\/15 {
+  background-color: rgba(185, 217, 242, 0.03) !important;
+  border-color: rgba(255, 255, 255, 0.04) !important;
+}
+
 .late-night div.bg-doodle-mint\/40 {
   background-color: rgba(204, 235, 217, 0.04) !important;
   border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.late-night div.bg-doodle-mint\/20 {
+  background-color: rgba(204, 235, 217, 0.03) !important;
+  border-color: rgba(255, 255, 255, 0.04) !important;
 }
 
 /* Player Turn Badge in card back */
@@ -1591,10 +1891,10 @@ button {
 .late-night .ambient-fab {
   background: #1e1e22;
   border-color: var(--category-glow, var(--ink));
-  color: var(--ink);
+  color: var(--category-glow, #bef264);
   box-shadow:
     4px 5px 0 rgba(0, 0, 0, 0.4),
-    0 0 8px var(--category-glow-soft, rgba(255, 255, 255, 0.08));
+    0 0 10px var(--category-glow-soft, rgba(190, 242, 100, 0.2));
 }
 
 .late-night .ambient-fab--playing {

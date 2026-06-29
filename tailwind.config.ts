@@ -17,6 +17,8 @@ const config: Config = {
           300: "var(--paper-300, #e5c690)",
         },
         ink: {
+          500: "var(--ink-500, #6b5f55)",
+          600: "var(--ink-600, #524840)",
           700: "var(--ink-700, #3f352d)",
           800: "var(--ink-800, #2f2925)",
           900: "var(--ink-900, #211d1a)",

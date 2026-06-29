@@ -106,6 +106,79 @@ export type Database = {
           },
         ];
       };
+      admin_users: {
+        Row: {
+          user_id: string;
+          email: string;
+          display_name: string | null;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          email: string;
+          display_name?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          email?: string;
+          display_name?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      analytics_events: {
+        Row: {
+          id: string;
+          event_type: string;
+          occurred_at: string;
+          session_id: string | null;
+          talk_mode: string | null;
+          category_slug: string | null;
+          question_id: string | null;
+          depth: number | null;
+          audience: string | null;
+          room_id: string | null;
+          page_path: string | null;
+          metadata: Record<string, unknown>;
+        };
+        Insert: {
+          id?: string;
+          event_type: string;
+          occurred_at?: string;
+          session_id?: string | null;
+          talk_mode?: string | null;
+          category_slug?: string | null;
+          question_id?: string | null;
+          depth?: number | null;
+          audience?: string | null;
+          room_id?: string | null;
+          page_path?: string | null;
+          metadata?: Record<string, unknown>;
+        };
+        Update: {
+          id?: string;
+          event_type?: string;
+          occurred_at?: string;
+          session_id?: string | null;
+          talk_mode?: string | null;
+          category_slug?: string | null;
+          question_id?: string | null;
+          depth?: number | null;
+          audience?: string | null;
+          room_id?: string | null;
+          page_path?: string | null;
+          metadata?: Record<string, unknown>;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "analytics_events_question_id_fkey";
+            columns: ["question_id"];
+            referencedRelation: "questions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

@@ -6,9 +6,18 @@ dist
 .env
 .env.local
 .env.*.local
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .DS_Store
 *.tsbuildinfo
+
+# Tooling & temporary files
+repomix-output.xml
+recovered_raw.js
+
+# Local schema cache files (generated from Supabase)
+supabase-schema.ts
+supabase-schema-utf8.ts

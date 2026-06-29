@@ -18,9 +18,13 @@ import {
   Download,
   AlertCircle,
   Copy,
-  Braces
+  Braces,
+  LogOut,
+  BarChart3
 } from "lucide-react";
-import { getSupabaseClient } from "@/lib/supabase";
+import { getSupabaseAuthClient, signOutAdmin } from "@/lib/supabase-auth";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { AdminDashboard } from "@/components/admin/admin-dashboard";
 
 type DbCategory = {
   id: string;
@@ -150,7 +154,7 @@ const getQuestionItemsFromJson = (parsed: unknown) => {
 };
 
 export function KhuiDeepAdmin() {
-  const [activeTab, setActiveTab] = useState<"categories" | "questions">("categories");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "categories" | "questions">("dashboard");
   const [selectedAdminMode, setSelectedAdminMode] = useState<"deep" | "interesting">("deep");
   const [categories, setCategories] = useState<DbCategory[]>([]);
   const [questions, setQuestions] = useState<DbQuestion[]>([]);
@@ -231,7 +235,7 @@ export function KhuiDeepAdmin() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const supabase = getSupabaseClient();
+    const supabase = getSupabaseAuthClient();
 
     if (!supabase) {
       setError("ไม่พบการเชื่อมต่อ Supabase กรุณาตรวจสอบ Environment Variables (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY)");
@@ -293,7 +297,7 @@ export function KhuiDeepAdmin() {
   // CRUD Operations: Categories
   const handleSaveCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = getSupabaseClient();
+    const supabase = getSupabaseAuthClient();
     if (!supabase) return;
 
     // Validate Slug format
@@ -378,7 +382,7 @@ export function KhuiDeepAdmin() {
   };
 
   const handleDeleteCategory = async (id: string) => {
-    const supabase = getSupabaseClient();
+    const supabase = getSupabaseAuthClient();
     if (!supabase) return;
 
     try {
@@ -397,7 +401,7 @@ export function KhuiDeepAdmin() {
   // CRUD Operations: Questions
   const handleSaveQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = getSupabaseClient();
+    const supabase = getSupabaseAuthClient();
     if (!supabase) return;
 
     if (!questionForm.question.trim()) {
@@ -604,7 +608,7 @@ export function KhuiDeepAdmin() {
   const handleSaveQuestionJson = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const supabase = getSupabaseClient();
+    const supabase = getSupabaseAuthClient();
     if (!supabase || !editingJsonQuestion) return;
 
     try {
@@ -775,7 +779,7 @@ export function KhuiDeepAdmin() {
   const handleSaveBulkQuestionJson = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const supabase = getSupabaseClient();
+    const supabase = getSupabaseAuthClient();
     if (!supabase) return;
 
     try {
@@ -820,7 +824,7 @@ export function KhuiDeepAdmin() {
   };
 
   const handleDeleteQuestion = async (id: string) => {
-    const supabase = getSupabaseClient();
+    const supabase = getSupabaseAuthClient();
     if (!supabase) return;
 
     try {
@@ -838,7 +842,7 @@ export function KhuiDeepAdmin() {
 
   const handleImportJson = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = getSupabaseClient();
+    const supabase = getSupabaseAuthClient();
     if (!supabase) return;
 
     if (!jsonInput.trim()) {
@@ -1155,6 +1159,23 @@ export function KhuiDeepAdmin() {
 
   return (
     <main className="relative min-h-screen px-4 py-8 text-ink-900 sm:px-6 lg:px-8 bg-paper">
+      <div className="absolute right-4 top-4 z-50 flex items-center gap-2 sm:right-6 sm:top-6 lg:right-8 lg:top-8">
+        <button
+          type="button"
+          onClick={async () => {
+            await signOutAdmin();
+            window.location.href = "/admin/login";
+          }}
+          className="btn-doodle flex h-12 items-center gap-2 rounded-note border-2 border-ink-800 bg-white px-3 font-hand text-base font-bold shadow-sketch-soft sm:px-4"
+          title="ออกจากระบบ"
+          aria-label="ออกจากระบบ"
+        >
+          <LogOut className="h-5 w-5" />
+          <span className="hidden sm:inline">ออกจากระบบ</span>
+        </button>
+        <ThemeToggle />
+      </div>
+
       {/* Decorative lines */}
       <div className="pointer-events-none absolute -left-20 top-36 h-40 w-40 rotate-12 rounded-[45%_55%_48%_52%] border border-dashed border-ink-800/10 bg-doodle-sky/15" />
       <div className="pointer-events-none absolute bottom-12 right-6 h-28 w-28 rotate-[-8deg] rounded-[52%_48%_50%_50%] border border-dashed border-ink-800/10 bg-doodle-mint/20" />
@@ -1203,7 +1224,7 @@ export function KhuiDeepAdmin() {
           </Link>
 
           <div className="inline-flex rotate-[-1deg] items-center gap-2 rounded-full border-2 border-ink-800 bg-doodle-lemon px-4 py-1.5 font-hand text-lg font-bold shadow-sketch-soft">
-            <Settings className="h-5 w-5 animate-spin-slow text-ink-900" />
+            <Settings className="admin-badge-icon h-5 w-5 animate-spin-slow text-ink-900" />
             <span>ระบบจัดการคำถาม (Admin Panel)</span>
           </div>
         </motion.nav>
@@ -1236,7 +1257,7 @@ export function KhuiDeepAdmin() {
                 setConfirmDeleteId(null);
               }}
               className={`btn-doodle flex items-center gap-2 rounded-note border-2 border-ink-800 px-6 py-2.5 font-hand text-xl font-bold shadow-sketch ${
-                selectedAdminMode === "interesting" ? "bg-[#ffd1f3] scale-105" : "bg-white text-ink-600"
+                selectedAdminMode === "interesting" ? "bg-doodle-rose scale-105" : "bg-white text-ink-600"
               }`}
               style={{ "--btn-hover-rotate": "1deg" } as React.CSSProperties}
             >
@@ -1249,11 +1270,24 @@ export function KhuiDeepAdmin() {
         <motion.div variants={itemVariants} className="mb-6 flex flex-col sm:flex-row gap-4 border-b border-dashed border-ink-800/20 pb-4">
           <button
             onClick={() => {
+              setActiveTab("dashboard");
+              setConfirmDeleteId(null);
+            }}
+            className={`btn-doodle flex items-center gap-2 rounded-note border-2 border-ink-800 px-5 py-2.5 font-hand text-xl font-bold shadow-sketch-soft ${
+              activeTab === "dashboard" ? "bg-doodle-lilac scale-105" : "bg-white"
+            }`}
+            style={{ "--btn-hover-rotate": "1deg" } as React.CSSProperties}
+          >
+            <BarChart3 className="h-5 w-5" />
+            <span>Dashboard</span>
+          </button>
+          <button
+            onClick={() => {
               setActiveTab("categories");
               setConfirmDeleteId(null);
             }}
             className={`btn-doodle flex items-center gap-2 rounded-note border-2 border-ink-800 px-5 py-2.5 font-hand text-xl font-bold shadow-sketch-soft ${
-              activeTab === "categories" ? "bg-[#ffd5bd] scale-105" : "bg-white"
+              activeTab === "categories" ? "bg-doodle-peach scale-105" : "bg-white"
             }`}
             style={{ "--btn-hover-rotate": "-1deg" } as React.CSSProperties}
           >
@@ -1266,7 +1300,7 @@ export function KhuiDeepAdmin() {
               setConfirmDeleteId(null);
             }}
             className={`btn-doodle flex items-center gap-2 rounded-note border-2 border-ink-800 px-5 py-2.5 font-hand text-xl font-bold shadow-sketch-soft ${
-              activeTab === "questions" ? "bg-[#b9d9f2] scale-105" : "bg-white"
+              activeTab === "questions" ? "bg-doodle-sky scale-105" : "bg-white"
             }`}
             style={{ "--btn-hover-rotate": "1deg" } as React.CSSProperties}
           >
@@ -1275,7 +1309,17 @@ export function KhuiDeepAdmin() {
           </button>
         </motion.div>
 
-        {loading ? (
+        {activeTab === "dashboard" ? (
+          <AdminDashboard
+            talkMode={selectedAdminMode}
+            categories={modeCategories.map((category) => ({ slug: category.slug, name: category.name }))}
+            questions={modeQuestions.map((question) => ({
+              id: question.id,
+              question: question.question,
+              category_id: question.category_id,
+            }))}
+          />
+        ) : loading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="h-12 w-12 rounded-full border-4 border-ink-800 border-t-transparent animate-spin" />
             <p className="mt-4 font-hand text-xl font-bold text-ink-700">กำลังเชื่อมต่อและโหลดข้อมูล...</p>

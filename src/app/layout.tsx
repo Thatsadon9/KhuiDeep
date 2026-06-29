@@ -32,7 +32,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="th">
+    <html lang="th" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("theme");if(t==="late-night"){document.documentElement.classList.add("late-night")}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className={`${notoThai.variable} ${mali.variable} font-body antialiased`}>
         {children}
       </body>

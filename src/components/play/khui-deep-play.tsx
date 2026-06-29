@@ -28,6 +28,8 @@ import {
   parseTalkModeId,
 } from "@/lib/talk-modes";
 import { getSupabaseClient } from "@/lib/supabase";
+import { trackEvent, trackEventAsync } from "@/lib/analytics";
+import { useLateNight } from "@/lib/use-late-night";
 import type { DeepQuestion, QuestionCategory, QuestionDeck } from "@/types";
 
 type KhuiDeepPlayProps = {
@@ -171,6 +173,7 @@ function PixelQuestionIcon() {
 
 export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
   const { playDraw, playFlip, playClick } = useSoundEngine();
+  const isLateNight = useLateNight();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -250,6 +253,17 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
 
   const selectedDepthLabel = selectedDepth ? depthLabels[selectedDepth] ?? `ระดับ ${selectedDepth}` : null;
   const selectedAudienceLabel = selectedAudience ? audienceLabels[selectedAudience] : null;
+
+  useEffect(() => {
+    void trackEventAsync("page_view", {
+      talk_mode: selectedTalkMode,
+      category_slug: categorySlug,
+      depth: selectedDepth,
+      audience: selectedAudience,
+      room_id: roomId,
+      page_path: `/play/${categorySlug}`,
+    });
+  }, [selectedTalkMode, categorySlug, selectedDepth, selectedAudience, roomId]);
 
   type CardItem = {
     id: string;
@@ -387,6 +401,16 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
     const randomId = Math.random().toString(36).substring(2, 10);
     const params = new URLSearchParams(searchParams ? searchParams.toString() : "");
     params.set("room", randomId);
+
+    trackEvent("room_create", {
+      talk_mode: selectedTalkMode,
+      category_slug: categorySlug,
+      depth: selectedDepth,
+      audience: selectedAudience,
+      room_id: randomId,
+      page_path: `/play/${categorySlug}`,
+    });
+
     router.push(`${pathname}?${params.toString()}`);
   };
 
@@ -562,7 +586,17 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
     }
 
     performCardTransition(nextQuestion, nextAssignedPlayer, nextUsedIds, notice);
-  }, [questionPool, usedIds, visibleCards, swipeState, players, roomId, performCardTransition]);
+
+    trackEvent("card_draw", {
+      talk_mode: selectedTalkMode,
+      category_slug: categorySlug,
+      question_id: nextQuestion.id,
+      depth: selectedDepth,
+      audience: selectedAudience,
+      room_id: roomId,
+      page_path: `/play/${categorySlug}`,
+    });
+  }, [questionPool, usedIds, visibleCards, swipeState, players, roomId, performCardTransition, selectedTalkMode, categorySlug, selectedDepth, selectedAudience]);
 
   const resetRound = useCallback(() => {
     if (questionPool.length === 0 || swipeState !== "idle") return;
@@ -587,7 +621,17 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
     }
 
     performCardTransition(nextQuestion, nextAssignedPlayer, nextUsedIds, notice);
-  }, [questionPool, swipeState, players, visibleCards, roomId, performCardTransition]);
+
+    trackEvent("deck_reset", {
+      talk_mode: selectedTalkMode,
+      category_slug: categorySlug,
+      question_id: nextQuestion.id,
+      depth: selectedDepth,
+      audience: selectedAudience,
+      room_id: roomId,
+      page_path: `/play/${categorySlug}`,
+    });
+  }, [questionPool, swipeState, players, visibleCards, roomId, performCardTransition, selectedTalkMode, categorySlug, selectedDepth, selectedAudience]);
 
   const animateNextCard = useCallback(() => {
     drawQuestion();
@@ -731,43 +775,95 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
 
   // Accent gradient based on the selected category's accent color
   const dynamicBackgroundStyle = useMemo(() => {
-    if (isInterestingMode) {
-      return {
-        background: `
-          radial-gradient(circle at 10% 10%, rgba(125, 211, 252, 0.34), transparent 26rem),
-          radial-gradient(circle at 88% 12%, rgba(255, 209, 243, 0.48), transparent 24rem),
-          radial-gradient(circle at 72% 88%, rgba(190, 242, 100, 0.22), transparent 22rem),
-          linear-gradient(90deg, rgba(47, 41, 37, 0.035) 1px, transparent 1px),
-          linear-gradient(rgba(47, 41, 37, 0.035) 1px, transparent 1px),
-          var(--paper)
-        `,
-        backgroundSize: "auto, auto, auto, 30px 30px, 30px 30px, auto",
-        "--category-glow": displayCategory.accent,
-        "--category-glow-soft": `${displayCategory.accent}66`,
-        "--category-glow-alpha": `${displayCategory.accent}26`,
-        "--bg-glow-1": "rgba(125, 211, 252, 0.26)",
-        "--bg-glow-2": "rgba(255, 209, 243, 0.24)",
-        "--btn-glow": displayCategory.accent,
-      } as React.CSSProperties;
-    }
-
-    return {
-      background: `
-        radial-gradient(circle at top left, ${displayCategory.accent}4d, transparent 36rem),
-        radial-gradient(circle at 85% 15%, ${displayCategory.accent}33, transparent 28rem),
-        linear-gradient(90deg, rgba(47, 41, 37, 0.035) 1px, transparent 1px),
-        linear-gradient(rgba(47, 41, 37, 0.035) 1px, transparent 1px),
-        var(--paper)
-      `,
-      backgroundSize: "auto, auto, 32px 32px, 32px 32px, auto",
+    const categoryVars = {
       "--category-glow": displayCategory.accent,
       "--category-glow-soft": `${displayCategory.accent}66`,
       "--category-glow-alpha": `${displayCategory.accent}26`,
-      "--bg-glow-1": `${displayCategory.accent}24`,
-      "--bg-glow-2": `${displayCategory.accent}18`,
       "--btn-glow": displayCategory.accent,
     } as React.CSSProperties;
-  }, [displayCategory.accent, isInterestingMode]);
+
+    const layeredBackground = (
+      backgroundImage: string,
+      backgroundSize: string,
+      backgroundRepeat: string,
+      extra: Record<string, string> = {},
+    ): React.CSSProperties => ({
+      ...categoryVars,
+      ...extra,
+      backgroundImage,
+      backgroundSize,
+      backgroundRepeat,
+      backgroundColor: "var(--paper)",
+    } as React.CSSProperties);
+
+    if (isInterestingMode) {
+      if (isLateNight) {
+        return layeredBackground(
+          [
+            "radial-gradient(circle at 10% 10%, rgba(14, 165, 233, 0.16), transparent 26rem)",
+            "radial-gradient(circle at 88% 12%, rgba(168, 85, 247, 0.14), transparent 24rem)",
+            "radial-gradient(circle at 72% 88%, rgba(190, 242, 100, 0.1), transparent 22rem)",
+            "linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px)",
+            "linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px)",
+          ].join(", "),
+          "auto, auto, auto, 30px 30px, 30px 30px",
+          "no-repeat, no-repeat, no-repeat, repeat, repeat",
+          {
+            "--bg-glow-1": "rgba(14, 165, 233, 0.12)",
+            "--bg-glow-2": "rgba(190, 242, 100, 0.1)",
+          },
+        );
+      }
+
+      return layeredBackground(
+        [
+          "radial-gradient(circle at 10% 10%, rgba(125, 211, 252, 0.34), transparent 26rem)",
+          "radial-gradient(circle at 88% 12%, rgba(255, 209, 243, 0.48), transparent 24rem)",
+          "radial-gradient(circle at 72% 88%, rgba(190, 242, 100, 0.22), transparent 22rem)",
+          "linear-gradient(90deg, rgba(47, 41, 37, 0.035) 1px, transparent 1px)",
+          "linear-gradient(rgba(47, 41, 37, 0.035) 1px, transparent 1px)",
+        ].join(", "),
+        "auto, auto, auto, 30px 30px, 30px 30px",
+        "no-repeat, no-repeat, no-repeat, repeat, repeat",
+        {
+          "--bg-glow-1": "rgba(125, 211, 252, 0.26)",
+          "--bg-glow-2": "rgba(255, 209, 243, 0.24)",
+        },
+      );
+    }
+
+    if (isLateNight) {
+      return layeredBackground(
+        [
+          `radial-gradient(circle at top left, ${displayCategory.accent}22, transparent 36rem)`,
+          `radial-gradient(circle at 85% 15%, ${displayCategory.accent}18, transparent 28rem)`,
+          "linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px)",
+          "linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px)",
+        ].join(", "),
+        "auto, auto, 32px 32px, 32px 32px",
+        "no-repeat, no-repeat, repeat, repeat",
+        {
+          "--bg-glow-1": `${displayCategory.accent}18`,
+          "--bg-glow-2": `${displayCategory.accent}12`,
+        },
+      );
+    }
+
+    return layeredBackground(
+      [
+        `radial-gradient(circle at top left, ${displayCategory.accent}4d, transparent 36rem)`,
+        `radial-gradient(circle at 85% 15%, ${displayCategory.accent}33, transparent 28rem)`,
+        "linear-gradient(90deg, rgba(47, 41, 37, 0.035) 1px, transparent 1px)",
+        "linear-gradient(rgba(47, 41, 37, 0.035) 1px, transparent 1px)",
+      ].join(", "),
+      "auto, auto, 32px 32px, 32px 32px",
+      "no-repeat, no-repeat, repeat, repeat",
+      {
+        "--bg-glow-1": `${displayCategory.accent}24`,
+        "--bg-glow-2": `${displayCategory.accent}18`,
+      },
+    );
+  }, [displayCategory.accent, isInterestingMode, isLateNight]);
 
   return (
     <main
@@ -824,9 +920,12 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
               "inline-flex rotate-[0.5deg] items-center gap-2 rounded-full border-2 border-ink-800 px-4 py-2 font-hand text-lg font-bold shadow-sketch-soft",
               isInterestingMode && "interesting-play-mode-pill",
             )}
-            style={{ backgroundColor: displayCategory.accent }}
+            style={{
+              backgroundColor: isLateNight ? undefined : displayCategory.accent,
+              "--category-glow": displayCategory.accent,
+            } as React.CSSProperties}
           >
-            <Sparkles className="h-5 w-5 animate-pulse text-ink-900" />
+            <Sparkles className={clsx("h-5 w-5 animate-pulse", isInterestingMode ? "interesting-pill-icon" : "text-ink-900")} />
             <span>หมวดหมู่: {displayCategory.name}</span>
           </div>
         </nav>
@@ -956,6 +1055,18 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
                               c.id === card.id ? { ...c, isFlipped: newFlippedState } : c
                             )
                           );
+
+                          if (newFlippedState && card.question) {
+                            trackEvent("card_open", {
+                              talk_mode: selectedTalkMode,
+                              category_slug: categorySlug,
+                              question_id: card.question.id,
+                              depth: selectedDepth,
+                              audience: selectedAudience,
+                              room_id: roomId,
+                              page_path: `/play/${categorySlug}`,
+                            });
+                          }
                         }
                       }}
                     />
@@ -971,7 +1082,7 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
                   isInterestingMode && "interesting-play-hint",
                 )}
               >
-                <Lightbulb className="h-5 w-5 text-ink-600 shrink-0" aria-hidden />
+                <Lightbulb className="interesting-hint-icon h-5 w-5 shrink-0 text-ink-600" aria-hidden />
                 <span>ปัดการ์ดไปทางซ้ายเพื่อเปลี่ยนใบใหม่ได้นะ!</span>
               </p>
             )}
@@ -1171,13 +1282,17 @@ export function KhuiDeepPlay({ deck, categorySlug }: KhuiDeepPlayProps) {
                       {Math.round((usedIds.size / Math.max(questionPool.length, 1)) * 100)}%
                     </span>
                   </div>
-                  <div className="w-full bg-paper-50 rounded-full border-2 border-ink-800 h-4 overflow-hidden relative shadow-inner">
+                  <div className="play-progress-track w-full bg-paper-50 rounded-full border-2 border-ink-800 h-4 overflow-hidden relative shadow-inner">
                     <div
-                      className="h-full transition-all duration-500 ease-out"
+                      className={clsx(
+                        "play-progress-fill h-full transition-all duration-500 ease-out",
+                        isInterestingMode && "interesting-play-progress-fill",
+                      )}
                       style={{
                         width: `${(usedIds.size / Math.max(questionPool.length, 1)) * 100}%`,
                         backgroundColor: displayCategory.accent,
-                      }}
+                        "--category-glow": displayCategory.accent,
+                      } as React.CSSProperties}
                     />
                   </div>
                 </div>

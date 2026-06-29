@@ -73,14 +73,15 @@ export default function PlayLoading() {
   }, []);
 
   const dynamicBackgroundStyle = {
-    background: `
-      radial-gradient(circle at top left, ${accent}4d, transparent 36rem),
-      radial-gradient(circle at 85% 15%, ${accent}33, transparent 28rem),
-      linear-gradient(90deg, rgba(47, 41, 37, 0.035) 1px, transparent 1px),
-      linear-gradient(rgba(47, 41, 37, 0.035) 1px, transparent 1px),
-      var(--paper)
-    `,
-    backgroundSize: "auto, auto, 32px 32px, 32px 32px, auto",
+    backgroundImage: [
+      `radial-gradient(circle at top left, ${accent}4d, transparent 36rem)`,
+      `radial-gradient(circle at 85% 15%, ${accent}33, transparent 28rem)`,
+      "linear-gradient(90deg, rgba(47, 41, 37, 0.035) 1px, transparent 1px)",
+      "linear-gradient(rgba(47, 41, 37, 0.035) 1px, transparent 1px)",
+    ].join(", "),
+    backgroundSize: "auto, auto, 32px 32px, 32px 32px",
+    backgroundRepeat: "no-repeat, no-repeat, repeat, repeat",
+    backgroundColor: "var(--paper)",
     "--category-glow": accent,
     "--category-glow-soft": `${accent}66`,
     "--category-glow-alpha": `${accent}26`,
